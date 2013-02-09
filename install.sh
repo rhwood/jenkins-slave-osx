@@ -45,9 +45,9 @@ function create_user() {
 }
 
 function install_files() {
-	return 0 # prevent actual installation
 	# download the LaunchDaemon
 	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	
 	# create the jenkins home dir
 	if [ ! -d ${JENKINS_HOME} ] ; then
 		sudo mkdir ${JENKINS_HOME}
@@ -171,6 +171,12 @@ read -p "Continue (yes/no) [yes]? " CONFIRM
 
 CONFIRM=${CONFIRM:-"yes"}
 if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+	echo
+	echo "Verifying that you may use sudo. You may be prompted for your password"
+	if ! sudo -v ; then
+		echo "Unable to use sudo. Aborting installation"
+		exit 1
+	fi
 	create_user
 	process_args $@
 	echo "Installing files..."
@@ -179,6 +185,6 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	configure_daemon
 	write_config
 else
-	echo
-	exit 0
+	echo "Aborting installation"
+	exit 1
 fi

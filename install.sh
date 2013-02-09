@@ -16,6 +16,8 @@ MASTER_CA=""
 SLAVE_NODE=""
 SLAVE_TOKEN=""
 DEV_PROFILE=""
+OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
+OSX_KEYCHAIN_PASS=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 
@@ -59,6 +61,9 @@ function install_files() {
 	# download the jenkins JNLP slave script
 	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${JENKINS_HOME}/slave.jnlp.sh
+	# download the jenkins JNLP security helper script
+	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/security.sh -o ${JENKINS_HOME}/security.sh
+	sudo chmod 755 ${JENKINS_HOME}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${JENKINS_USER}:wheel ${JENKINS_HOME}
 	# create a logging space
@@ -73,6 +78,11 @@ function process_args {
 		sudo chmod 666 ${JENKINS_CONF}
 		source ${JENKINS_CONF}
 		sudo chmod 400 ${JENKINS_CONF}
+	fi
+	if [ -f ${JENKINS_HOME}/Library/.keychain_pass ]; then
+		sudo chmod 666 ${JENKINS_HOME}/Library/.keychain_pass
+		source ${JENKINS_HOME}/Library/.keychain_pass
+		sudo chmod 400 ${JENKINS_HOME}/Library/.keychain_pass
 	fi
 	while [ $# -gt 0 ]; do
 		case $1 in
@@ -123,7 +133,8 @@ function configure_daemon {
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
-	PASSWORD=$( env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20 )
+	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`}
+	KEYSTORE_PASS=`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`
 	if [ "$PROTOCOL" == "https" ]; then
 		if sudo -i -u ${JENKINS_USER} java -jar ${INSTALL_TMP}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
 			if [[ -z $MASTER_CERT && -z $MASTER_CA ]]; then
@@ -144,17 +155,19 @@ function configure_daemon {
 					echo "Unable to read ${MASTER_CERT}"
 					read -p "Path to certificate: " MASTER_CERT
 				done
-				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${JENKINS_HOME}/.keystore -storepass ${PASSWORD}
+				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${JENKINS_HOME}/.keystore -storepass ${KEYSTORE_PASS}
 			fi
 			if [ ! -z $MASTER_CA ]; then
 				while [ ! -f $MASTER_CA ]; do
 					echo "Unable to read ${MASTER_CA}"
 					read -p "Path to certificate: " MASTER_CA
 				done
-				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${JENKINS_HOME}/.keystore -storepass ${PASSWORD}
+				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${JENKINS_HOME}/.keystore -storepass ${KEYSTORE_PASS}
 			fi
+			sudo -i -u ${JENKINS_USER} ${JENKINS_HOME}/security.sh --keychain-pass=${OSX_KEYCHAIN_PASS} --keychain=${OSX_KEYCHAIN} --password=${KEYSTORE_PASS} --account=jenkins --service=java_truststore
 		fi
 	fi
+	
 }
 
 function write_config {

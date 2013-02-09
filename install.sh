@@ -17,7 +17,7 @@ SLAVE_NODE=""
 SLAVE_TOKEN=""
 DEV_PROFILE=""
 JAVA_ARGS=${JAVA_ARGS:-""}
-INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp.XXXXXX`
+INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 
 function create_user() {
 	# see if user exists
@@ -46,15 +46,16 @@ function create_user() {
 }
 
 function install_files() {
-	# download the LaunchDaemon
-	curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.plist
-	local PLIST=$(cat ${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.plist)
-	sudo echo "$PLIST" > /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
-	
 	# create the jenkins home dir
 	if [ ! -d ${JENKINS_HOME} ] ; then
 		sudo mkdir ${JENKINS_HOME}
 	fi
+	# download the LaunchDaemon
+	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo sed -i '' "s#\${JENKINS_HOME}#${JENKINS_HOME}#g" ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo sed -i '' "s#\${JENKINS_USER}#${JENKINS_USER}#g" ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	sudo ln -s ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
 	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${JENKINS_HOME}/slave.jnlp.sh

@@ -51,13 +51,13 @@ function install_files() {
 		sudo mkdir ${JENKINS_HOME}
 	fi
 	# download the LaunchDaemon
-	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_HOME}#${JENKINS_HOME}#g" ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_USER}#${JENKINS_USER}#g" ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	sudo ln -s ${JENKINS_HOME}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
-	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
+	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${JENKINS_HOME}/slave.jnlp.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${JENKINS_USER}:wheel ${JENKINS_HOME}
@@ -123,26 +123,43 @@ function configure_daemon {
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
+	PASSWORD=$( env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20 )
 	if [ "$PROTOCOL" == "https" ]; then
-		if java -jar ${INSTALL_TMP}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
+		if sudo -i -u ${JENKINS_USER} java -jar ${INSTALL_TMP}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
 			if [[ -z $MASTER_CERT && -z $MASTER_CA ]]; then
 				echo
 				echo "The certificate for ${MASTER_NAME} is not trusted by java"
 				read -p "Does ${MASTER_NAME} have a self-signed certificate? (yes/no) [yes]? " CONFIRM
 				CONFIRM=${CONFIRM:-"yes"}
-				if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-					true # until I figure out what to do here
+				if [[ "${CONFIRM}" =~ ^[Yy] ]]; then
+					echo "${MASTER_NAME}'s public certificate needs to be imported"
+					read -p "Path to certificate: " MASTER_CERT
+				else
+					echo "The root CA that signed ${MASTER_NAME}'s public certificate needs to be imported"
+					read -p "Path to certificate: " MASTER_CA
 				fi
 			fi
+			if [ ! -z $MASTER_CERT ]; then
+				while [ ! -f $MASTER_CERT ]; do
+					echo "Unable to read ${MASTER_CERT}"
+					read -p "Path to certificate: " MASTER_CERT
+				done
+				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${JENKINS_HOME}/.keystore -storepass ${PASSWORD}
+			fi
+			if [ ! -z $MASTER_CA ]; then
+				while [ ! -f $MASTER_CA ]; do
+					echo "Unable to read ${MASTER_CA}"
+					read -p "Path to certificate: " MASTER_CA
+				done
+				sudo -i -u ${JENKINS_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${JENKINS_HOME}/.keystore -storepass ${PASSWORD}
+			fi
 		fi
-		# TODO: test for MASTER_CERT
-		# if not MASTER_CERT, ask if $MASTER_NAME uses self-signed cert
-		# if "yes", ask for path to public key
-		# if "no", ask if JAVA includes CA
 	fi
 }
 
 function write_config {
+	sudo mkdir -p `dirname ${JENKINS_CONF}`
+	sudo chmod 777 `dirname ${JENKINS_CONF}`
 	if [ -f ${JENKINS_CONF} ]; then
 		sudo chmod 666 ${JENKINS_CONF}
 	fi
@@ -153,6 +170,7 @@ function write_config {
 	echo "JENKINS_USER=${MASTER_USER}" >> ${JENKINS_CONF}
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${JENKINS_CONF}
 	sudo chown ${JENKINS_USER}:${JENKINS_USER} ${JENKINS_CONF}
+	sudo chmod 700 `dirname ${JENKINS_CONF}`
 	sudo chmod 400 ${JENKINS_CONF}
 }
 

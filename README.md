@@ -10,7 +10,7 @@ OS X slaves created with this script:
 * Use the OS X Keychain for secrets
 
 ## Install
-`bash <( curl -L https://... )`
+`bash <( curl -L https://raw.github.com/rhwood/jenkins-slave-osx/master/install.sh )`
 
 The install script can take the following arguments:
 * `--master-cert=/path/to/cert.cer` to install a self-signed certificate for the Jenkins master

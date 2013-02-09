@@ -47,13 +47,15 @@ function create_user() {
 function install_files() {
 	return 0 # prevent actual installation
 	# download the LaunchDaemon
-	sudo curl --url https://raw.github.com/gist/4136130/d3c9d7275ce78e050d8594037a2d509652a766e5/org.jenkins-ci.slave.jnlp.plist -o /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# create the jenkins home dir
-	sudo mkdir ${JENKINS_HOME}
+	if [ ! -d ${JENKINS_HOME} ] ; then
+		sudo mkdir ${JENKINS_HOME}
+	fi
 	# download the jenkins JNLP slave script
-	sudo curl --url https://raw.github.com/gist/4136130/2553c4cec9bc7ed5557359a22c6c1b61028afa40/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
+	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${JENKINS_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${JENKINS_HOME}/slave.jnlp.sh
-	# jenkins should own jenkin's home directory
+	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${JENKINS_USER}:wheel ${JENKINS_HOME}
 	# create a logging space
 	if [ ! -d /var/log/${JENKINS_USER} ] ; then
@@ -171,7 +173,6 @@ CONFIRM=${CONFIRM:-"yes"}
 if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	create_user
 	process_args $@
-	exit 0 # abort for now
 	echo "Installing files..."
 	install_files
 	echo "Configuring daemon..."

@@ -182,9 +182,9 @@ function write_config {
 	echo "JENKINS_PORT=${MASTER_PORT}" >> ${JENKINS_CONF}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${JENKINS_CONF}
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${JENKINS_CONF}
-	sudo chown ${JENKINS_USER}:${JENKINS_USER} ${JENKINS_CONF}
-	sudo chmod 700 `dirname ${JENKINS_CONF}`
-	sudo chmod 400 ${JENKINS_CONF}
+	sudo chmod 755 `dirname ${JENKINS_CONF}`
+	sudo chmod 644 ${JENKINS_CONF}
+	sudo chown -R ${JENKINS_USER}:${JENKINS_USER} ${JENKINS_HOME}
 }
 
 function cleanup {

@@ -17,7 +17,7 @@ SLAVE_NODE=""
 SLAVE_TOKEN=""
 DEV_PROFILE=""
 JAVA_ARGS=${JAVA_ARGS:-""}
-INSTALL_TMP=`mktemp -d -q org.jenkins-ci.slave.jnlp.XXXXXX`
+INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp.XXXXXX`
 
 function create_user() {
 	# see if user exists

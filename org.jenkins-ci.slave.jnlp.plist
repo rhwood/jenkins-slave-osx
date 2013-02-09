@@ -6,23 +6,23 @@
 	<string>org.jenkins-ci.slave.jnlp</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/var/lib/jenkins/slave.jnlp.sh</string>
+		<string>${JENKINS_HOME}slave.jnlp.sh</string>
 	</array>
 	<key>KeepAlive</key>
 	<true/>
 	<key>RunAtLoad</key>
 	<true/>
 	<key>UserName</key>
-	<string>jenkins</string>
+	<string>${JENKINS_USER}</string>
 	<key>WorkingDirectory</key>
-	<string>/var/lib/jenkins</string>
+	<string>${JENKINS_HOME}</string>
 	<key>SessionCreate</key>
 	<true/>
 	<key>StandardInPath</key>
 	<string>/dev/null</string>
 	<key>StandardErrorPath</key>
-	<string>/var/log/jenkins/jenkins.log</string>
+	<string>/var/log/${JENKINS_USER}/org.jenkins-ci.slave.jnlp.log</string>
 	<key>StandardOutPath</key>
-	<string>/var/log/jenkins/jenkins.log</string>
+	<string>/var/log/${JENKINS_USER}/org.jenkins-ci.slave.jnlp.log</string>
 </dict>
 </plist>

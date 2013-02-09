@@ -17,6 +17,7 @@ SLAVE_NODE=""
 SLAVE_TOKEN=""
 DEV_PROFILE=""
 JAVA_ARGS=${JAVA_ARGS:-""}
+INSTALL_TMP=`mktemp -d -q org.jenkins-ci.slave.jnlp.XXXXXX`
 
 function create_user() {
 	# see if user exists
@@ -46,7 +47,9 @@ function create_user() {
 
 function install_files() {
 	# download the LaunchDaemon
-	sudo curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	curl --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.plist
+	local PLIST=$(cat ${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.plist)
+	sudo echo "$PLIST" > /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	
 	# create the jenkins home dir
 	if [ ! -d ${JENKINS_HOME} ] ; then
@@ -92,7 +95,7 @@ function configure_daemon {
 		read -p "URL for Jenkins master [$MASTER]: " RESPONSE
 		MASTER=${RESPONSE:-$MASTER}
 	fi
-	while ! curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --fail --output ${TMPDIR}/$$.slave.jar ; do
+	while ! curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --fail --output ${INSTALL_TMP}/slave.jar ; do
 		echo "Unable to connect to Jenkins at ${MASTER}"
 		read -p "URL for Jenkins master: " MASTER
 	done
@@ -120,7 +123,7 @@ function configure_daemon {
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
 	if [ "$PROTOCOL" == "https" ]; then
-		if java -jar ${TMPDIR}/$$.slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
+		if java -jar ${INSTALL_TMP}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
 			if [[ -z $MASTER_CERT && -z $MASTER_CA ]]; then
 				echo
 				echo "The certificate for ${MASTER_NAME} is not trusted by java"
@@ -151,7 +154,12 @@ function write_config {
 	sudo chown ${JENKINS_USER}:${JENKINS_USER} ${JENKINS_CONF}
 	sudo chmod 400 ${JENKINS_CONF}
 }
-	
+
+function cleanup {
+	rm -rf ${INSTALL_TMP}
+	exit $1
+}
+
 echo "
         _          _   _              _ _  _ _    ___   ___ _              
      _ | |___ _ _ | |_(_)_ _  ___  _ | | \| | |  | _ \ / __| |__ ___ _____ 
@@ -175,7 +183,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	echo "Verifying that you may use sudo. You may be prompted for your password"
 	if ! sudo -v ; then
 		echo "Unable to use sudo. Aborting installation"
-		exit 1
+		cleanup 1
 	fi
 	create_user
 	process_args $@
@@ -186,5 +194,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	write_config
 else
 	echo "Aborting installation"
-	exit 1
+	cleanup 1
 fi
+
+cleanup 0

@@ -138,7 +138,6 @@ function configure_daemon {
 	if [ "$PROTOCOL" == "https" ]; then
 		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
 		if sudo -i -u ${SERVICE_USER} java -jar ${SERVICE_HOME}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
-			echo "need certs"
 			if [[ -z $MASTER_CERT && -z $MASTER_CA ]]; then
 				echo
 				echo "The certificate for ${MASTER_NAME} is not trusted by java"
@@ -152,24 +151,39 @@ function configure_daemon {
 					read -p "Path to certificate: " MASTER_CA
 				fi
 			fi
+			create_keychain
+			sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 			if [ ! -z $MASTER_CERT ]; then
 				while [ ! -f $MASTER_CERT ]; do
 					echo "Unable to read ${MASTER_CERT}"
 					read -p "Path to certificate: " MASTER_CERT
 				done
-				sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
+				# sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
+				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${MASTER_CERT}
 			fi
 			if [ ! -z $MASTER_CA ]; then
 				while [ ! -f $MASTER_CA ]; do
 					echo "Unable to read ${MASTER_CA}"
 					read -p "Path to certificate: " MASTER_CA
 				done
-				sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
+				# sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
+				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-ca --certificate=${MASTER_CA}
 			fi
-			sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh --keychain-pass=${OSX_KEYCHAIN_PASS} --keychain=${OSX_KEYCHAIN} --password=${KEYSTORE_PASS} --account=jenkins --service=java_truststore
 		fi
 	fi
 	
+}
+
+function create_keychain {
+	local KEYCHAINS=${SERVICE_HOME}/Library/Keychains
+	if [ ! -f ${KEYCHAINS}/${OSX_KEYCHAIN} ]; then
+		sudo -i -u ${SERVICE_USER} security create-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
+		if [ -f ${KEYCHAINS}/.keychain_pass ]; then
+			sudo chmod 666 ${KEYCHAINS}/.keychain_pass
+		fi
+		sudo echo "OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}" > ${KEYCHAINS}/.keychain_pass
+		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
+	fi
 }
 
 function write_config {
@@ -186,6 +200,7 @@ function write_config {
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${SERVICE_CONF}
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}
+	sudo mkdir -p `dirname ${OSX_KEYCHAIN}`
 	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}
 }
 

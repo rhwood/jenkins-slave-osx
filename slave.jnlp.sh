@@ -7,10 +7,8 @@ JENKINS_MASTER=http://jenkins
 JENKINS_PORT=''
 JENKINS_USER=''
 JENKINS_TOKEN=''
-OSX_KEYCHAIN=jenkins.keychain
-OSX_KEYCHAIN_PASS=:${JENKINS_HOME}/.keychain_pass
 JAVA_ARGS=''
-JAVA_TRUSTSTORE=${JENKINS_HOME}/Library/jenkins.truststore
+JAVA_TRUSTSTORE=${JENKINS_HOME}/.keystore
 JAVA_TRUSTSTORE_PASS=''
 
 if [ -f ${JENKINS_CONF} ]; then
@@ -62,27 +60,18 @@ done
 echo "Launching slave process at ${JENKINS_JNLP_URL}"
 RESULT=-1
 while [ true ]; do
-	# read the password for the OS X Keychain
-	# also secure the password to the greatest extent possible
-	# there is no way to secure the keychain from administrators
-	if [[ -f $OSX_KEYCHAIN_PASS ]]; then
-		chmod 400 $OSX_KEYCHAIN_PASS
-		source $OSX_KEYCHAIN_PASS
-		security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
-	fi
 	# If we use a trustStore for the Jenkins Master certificates, we need to pass it
 	# and its password to the java process that runs the slave. The password is stored
 	# in the OS X Keychain that we use for other purposes.
 	if [[ -f $JAVA_TRUSTSTORE ]]; then
-		JAVA_TRUSTSTORE_PASS=`security find-generic-password -w -a jenkins -s java_truststore ${OSX_KEYCHAIN}`
+		JAVA_TRUSTSTORE_PASS=$( ~/security.sh get-password --account=`whoami` --service=java_truststore )
 		JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASS}" 
 	fi
 	# The user and API token are required for Jenkins >= 1.498
 	if [ ! -z ${JENKINS_USER} ]; then
-		JENKINS_TOKEN=`security find-generic-password -w -a ${JENKINS_USER} -s ${JENKINS_SLAVE} ${OSX_KEYCHAIN}`
+		JENKINS_TOKEN=$( ~/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 	fi
-	[[ -f $OSX_KEYCHAIN_PASS ]] && security lock-keychain ${OSX_KEYCHAIN}
 	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then

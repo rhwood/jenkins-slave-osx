@@ -113,7 +113,7 @@ function configure_daemon {
 	MASTER_NAME=`echo $MASTER | cut -d':' -f2 | cut -d'.' -f1 | cut -d'/' -f3`
 	PROTOCOL=`echo $MASTER | cut -d':' -f1`
 	MASTER_HTTP_PORT=`echo $MASTER | cut -d':' -f3`
-	if 	[ "$PROTOCOL" != "$MASTER" ] ; then
+	if 	[ "$PROTOCOL" == "$MASTER" ] ; then
 		PROTOCOL="http"
 		MASTER_HTTP_PORT=`echo $MASTER | cut -d':' -f2`
 		[ -z $MASTER_HTTP_PORT ] || MASTER="${PROTOCOL}://`echo $MASTER | cut -d':' -f2`"

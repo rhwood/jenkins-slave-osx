@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 # Install the Jenkins JNLP slave LaunchDaemon on OS X
+#
+# See https://github.com/rhwood/jenkins-slave-osx for usage
 
 set -u
 
@@ -167,7 +169,13 @@ a CA, the root CA's public certificate must be imported.
 			fi
 		fi
 	fi
-	
+	if [ -z $MASTER_JNLP_PORT ]; then
+		echo
+		echo "The JNLP port on $MASTER may need to be specified"
+		echo "This port is listed at ${MASTER}${MASTER_HTTP_PORT}/configureSecurity"
+		echo "NOTE: The installer is not capable of testing that this port is correct"
+		read -p "JNLP port [$MASTER_JNLP_PORT]: " MASTER_JNLP_PORT
+	fi
 }
 
 function create_keychain {

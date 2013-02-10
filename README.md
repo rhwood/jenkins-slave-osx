@@ -13,8 +13,7 @@ OS X slaves created with this script:
 `bash <( curl -L https://raw.github.com/rhwood/jenkins-slave-osx/master/install.sh )`
 
 The install script can take the following arguments:
-* `--master-cert=/path/to/cert.cer` to install a self-signed certificate for the Jenkins master
-* `--master-ca=/path/to/cacert.cer` to install a CA for the Jenkins master
+* `--certificate=/path/to/cert.cer` to install either a self-signed certificate for the Jenkins master, or the root certificate of the CA that signed the Jenkins master certificate
 * `--master=URL` to specify the Jenkins Master on the command line
 
 ## Update

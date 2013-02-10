@@ -90,8 +90,7 @@ function process_args {
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
 			--jnlp-port=*) MASTER_PORT=${1#*=} ;;
-			--master-cert=*) MASTER_CERT=${1#*=} ;;
-			--master-ca=*) MASTER_CA=${1#*=} ;;
+			--certificate=*) MASTER_CERT=${1#*=} ;;
 			--profile=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
 		esac
@@ -138,36 +137,24 @@ function configure_daemon {
 	if [ "$PROTOCOL" == "https" ]; then
 		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
 		if sudo -i -u ${SERVICE_USER} java -jar ${SERVICE_HOME}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
-			if [[ -z $MASTER_CERT && -z $MASTER_CA ]]; then
-				echo
-				echo "The certificate for ${MASTER_NAME} is not trusted by java"
-				read -p "Does ${MASTER_NAME} have a self-signed certificate? (yes/no) [yes]? " CONFIRM
-				CONFIRM=${CONFIRM:-"yes"}
-				if [[ "${CONFIRM}" =~ ^[Yy] ]]; then
-					echo "${MASTER_NAME}'s public certificate needs to be imported"
-					read -p "Path to certificate: " MASTER_CERT
-				else
-					echo "The root CA that signed ${MASTER_NAME}'s public certificate needs to be imported"
-					read -p "Path to certificate: " MASTER_CA
-				fi
+			if [ -z $MASTER_CERT ]; then
+				echo "
+The certificate for ${MASTER_NAME} is not trusted by java
+
+If ${MASTER_NAME} has a self-signed certifate, the public certificate
+must be imported. If the certificate for ${MASTER_NAME} is signed by
+a CA, the root CA's public certificate must be imported.
+"
+				read -p "Path to certificate: " MASTER_CERT
 			fi
-			create_keychain
-			sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 			if [ ! -z $MASTER_CERT ]; then
 				while [ ! -f $MASTER_CERT ]; do
 					echo "Unable to read ${MASTER_CERT}"
 					read -p "Path to certificate: " MASTER_CERT
 				done
-				# sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-cert -file ${MASTER_CERT} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
+				create_keychain
+				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${MASTER_CERT}
-			fi
-			if [ ! -z $MASTER_CA ]; then
-				while [ ! -f $MASTER_CA ]; do
-					echo "Unable to read ${MASTER_CA}"
-					read -p "Path to certificate: " MASTER_CA
-				done
-				# sudo -i -u ${SERVICE_USER} keytool -import -alias jenkins-ca -file ${MASTER_CA} -keystore ${SERVICE_HOME}/.keystore -storepass ${KEYSTORE_PASS}
-				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-ca --certificate=${MASTER_CA}
 			fi
 		fi
 	fi

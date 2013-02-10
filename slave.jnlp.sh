@@ -4,7 +4,8 @@ JENKINS_HOME=`dirname $0`
 JENKINS_CONF=${JENKINS_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 JENKINS_SLAVE=`hostname -s | tr '[:upper:]' '[:lower:]'`
 JENKINS_MASTER=http://jenkins
-JENKINS_PORT=''
+JNLP_PORT=''
+HTTP_PORT=''
 JENKINS_USER=''
 JENKINS_TOKEN=''
 JAVA_ARGS=''
@@ -25,7 +26,7 @@ while [ $# -gt 0 ]; do
 			JENKINS_MASTER=${1#*=}
 			;;
 		--jnlp-port=*)
-			JENKINS_PORT=":${1#*=}"
+			JNLP_PORT="${1#*=}"
 			;;
 		--user=*)
 			JENKINS_USER=${1#*=}
@@ -40,7 +41,9 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-JENKINS_JNLP_URL=${JENKINS_MASTER}${JENKINS_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
+[ ! -z $JNLP_PORT ] && JNLP_PORT=":${JNLP_PORT}"
+[ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
+JENKINS_JNLP_URL=${JENKINS_MASTER}${JNLP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
 
 # Download slave.jar. This ensures that everytime this daemon is loaded, we get the correct slave.jar
 # from the Master. We loop endlessly to get the jar, so that if we start before networking, we ensure
@@ -48,7 +51,7 @@ JENKINS_JNLP_URL=${JENKINS_MASTER}${JENKINS_PORT}/computer/${JENKINS_SLAVE}/slav
 echo "Getting slave.jar from ${JENKINS_MASTER}"
 RESULT=-1
 while [ true ]; do
-	curl --url ${JENKINS_MASTER}/jnlpJars/slave.jar -o ${JENKINS_HOME}/slave.jar
+	curl --url ${JENKINS_MASTER}${HTTP_PORT}/jnlpJars/slave.jar -o ${JENKINS_HOME}/slave.jar
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then
 		break

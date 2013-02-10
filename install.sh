@@ -10,7 +10,8 @@ SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 MASTER_NAME=""							# set default to jenkins later
 MASTER_USER=""							# set default to `whoami` later
 MASTER=""
-MASTER_PORT=""
+MASTER_HTTP_PORT=""
+MASTER_JNLP_PORT=""
 MASTER_CERT=""
 MASTER_CA=""
 SLAVE_NODE=""
@@ -89,7 +90,7 @@ function process_args {
 			--node=*) SLAVE_NODE=${1#*=} ;;
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
-			--jnlp-port=*) MASTER_PORT=${1#*=} ;;
+			--jnlp-port=*) MASTER_JNLP_PORT=${1#*=} ;;
 			--certificate=*) MASTER_CERT=${1#*=} ;;
 			--profile=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
@@ -111,7 +112,15 @@ function configure_daemon {
 	done
 	MASTER_NAME=`echo $MASTER | cut -d':' -f2 | cut -d'.' -f1 | cut -d'/' -f3`
 	PROTOCOL=`echo $MASTER | cut -d':' -f1`
-	[ "$PROTOCOL" != "$MASTER" ] || PROTOCOL="http"
+	MASTER_HTTP_PORT=`echo $MASTER | cut -d':' -f3`
+	if 	[ "$PROTOCOL" != "$MASTER" ] ; then
+		PROTOCOL="http"
+		MASTER_HTTP_PORT=`echo $MASTER | cut -d':' -f2`
+		[ -z $MASTER_HTTP_PORT ] || MASTER="${PROTOCOL}://`echo $MASTER | cut -d':' -f2`"
+	else
+		[ -z $MASTER_HTTP_PORT ] || MASTER="${PROTOCOL}:`echo $MASTER | cut -d':' -f2`"
+	fi
+	[ ! -z $MASTER_HTTP_PORT ] && MASTER_HTTP_PORT=":${MASTER_HTTP_PORT}"
 	if [ -z $SLAVE_NODE ]; then
 		SLAVE_NODE=${SLAVE_NODE:-`hostname -s | tr '[:upper:]' '[:lower:]'`}
 		echo
@@ -126,9 +135,9 @@ function configure_daemon {
 	fi
 	echo
 	echo "${MASTER_USER}'s API token is required to authenticate a JNLP slave."
-	echo "The API token is listed at ${MASTER}/user/${MASTER_USER}/configure"
+	echo "The API token is listed at ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER}/configure"
 	read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
-	while ! curl --url ${MASTER}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --silent --head --fail --output /dev/null ; do
+	while ! curl --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --silent --head --fail --output /dev/null ; do
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
@@ -179,10 +188,12 @@ function write_config {
 	if [ -f ${SERVICE_CONF} ]; then
 		sudo chmod 666 ${SERVICE_CONF}
 	fi
+	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
 	:> ${SERVICE_CONF}
 	echo "JENKINS_SLAVE=${SLAVE_NODE}" >> ${SERVICE_CONF}
 	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
-	echo "JENKINS_PORT=${MASTER_PORT}" >> ${SERVICE_CONF}
+	echo "JNLP_PORT=${MASTER_JNLP_PORT}" >> ${SERVICE_CONF}
+	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${SERVICE_CONF}
 	sudo chmod 755 `dirname ${SERVICE_CONF}`

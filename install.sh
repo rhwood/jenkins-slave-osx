@@ -177,8 +177,11 @@ function create_keychain {
 		if [ -f ${KEYCHAINS}/.keychain_pass ]; then
 			sudo chmod 666 ${KEYCHAINS}/.keychain_pass
 		fi
+		sudo chmod 777 ${KEYCHAINS}
 		sudo echo "OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}" > ${KEYCHAINS}/.keychain_pass
 		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
+		sudo chmod 755 ${KEYCHAINS}
+		sudo chown ${SERVICE_USER}:${SERVICE_USER} -R ${KEYCHAINS} 
 	fi
 }
 

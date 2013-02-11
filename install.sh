@@ -180,6 +180,10 @@ a CA, the root CA's public certificate must be imported.
 
 function create_keychain {
 	local KEYCHAINS=${SERVICE_HOME}/Library/Keychains
+	if [ ! -d ${KEYCHAINS} ]; then
+		sudo mkdir -p ${KEYCHAINS}
+		sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${KEYCHAINS}
+	fi
 	if [ ! -f ${KEYCHAINS}/${OSX_KEYCHAIN} ]; then
 		sudo -i -u ${SERVICE_USER} security create-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
 		if [ -f ${KEYCHAINS}/.keychain_pass ]; then
@@ -187,9 +191,9 @@ function create_keychain {
 		fi
 		sudo chmod 777 ${KEYCHAINS}
 		sudo echo "OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}" > ${KEYCHAINS}/.keychain_pass
+		sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${KEYCHAINS} 
 		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
 		sudo chmod 755 ${KEYCHAINS}
-		sudo chown ${SERVICE_USER}:${SERVICE_USER} -R ${KEYCHAINS} 
 	fi
 }
 
@@ -209,8 +213,31 @@ function write_config {
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${SERVICE_CONF}
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}
-	sudo mkdir -p `dirname ${OSX_KEYCHAIN}`
 	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}
+}
+
+function start_daemon {
+	echo "
+The Jenkins JNLP Slave service is installed
+
+This service can be started using the command
+	sudo launchctl load org.jenkins-ci.slave.jnlp.plist
+and stopped using the command
+	sudo launchctl unload org.jenkins-ci.slave.jnlp.plist
+
+This service logs to /var/log/${SERVICE_USER}/jenkins.log
+"
+	read -p "Start the slave service now (yes/no) [yes]? " CONFIRM
+	CONFIRM=${CONFIRM:-"yes"}
+	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+		sudo launchctl load -F org.jenkins-ci.slave.jnlp.plist
+		echo
+		read -p "Open Console.app to view logs now (yes/no) [yes]? " CONFIRM
+		CONFIRM=${CONFIRM:-"yes"}
+		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+			open /var/log/${SERVICE_USER}/jenkinsorg.jenkins-ci.slave.jnlp.log
+		fi
+	fi
 }
 
 function cleanup {
@@ -234,7 +261,6 @@ During the configuration, you will be prompted for nessessary information. The
 suggested or default response will be in brackets [].
 "
 read -p "Continue (yes/no) [yes]? " CONFIRM
-
 CONFIRM=${CONFIRM:-"yes"}
 if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	echo
@@ -250,6 +276,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	echo "Configuring daemon..."
 	configure_daemon
 	write_config
+	start_daemon
 else
 	echo "Aborting installation"
 	cleanup 1

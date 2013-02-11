@@ -144,6 +144,8 @@ function configure_daemon {
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`}
+	create_keychain
+	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${SERVICE_USER} --service=${SLAVE_NODE}
 	KEYSTORE_PASS=`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`
 	if [ "$PROTOCOL" == "https" ]; then
 		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
@@ -163,7 +165,6 @@ a CA, the root CA's public certificate must be imported.
 					echo "Unable to read ${MASTER_CERT}"
 					read -p "Path to certificate: " MASTER_CERT
 				done
-				create_keychain
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${MASTER_CERT}
 			fi

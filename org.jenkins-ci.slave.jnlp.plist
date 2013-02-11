@@ -6,7 +6,7 @@
 	<string>org.jenkins-ci.slave.jnlp</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>${JENKINS_HOME}slave.jnlp.sh</string>
+		<string>${JENKINS_HOME}/slave.jnlp.sh</string>
 	</array>
 	<key>KeepAlive</key>
 	<true/>

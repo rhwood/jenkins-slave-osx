@@ -67,12 +67,12 @@ while [ true ]; do
 	# and its password to the java process that runs the slave. The password is stored
 	# in the OS X Keychain that we use for other purposes.
 	if [[ -f $JAVA_TRUSTSTORE ]]; then
-		JAVA_TRUSTSTORE_PASS=$( ~/security.sh get-password --account=`whoami` --service=java_truststore )
+		JAVA_TRUSTSTORE_PASS=$( ${JENKINS_HOME}/security.sh get-password --account=`whoami` --service=java_truststore )
 		JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASS}" 
 	fi
 	# The user and API token are required for Jenkins >= 1.498
 	if [ ! -z ${JENKINS_USER} ]; then
-		JENKINS_TOKEN=$( ~/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
+		#JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 	fi
 	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}

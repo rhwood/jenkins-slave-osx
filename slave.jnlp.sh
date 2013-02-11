@@ -26,7 +26,7 @@ while [ $# -gt 0 ]; do
 			JENKINS_MASTER=${1#*=}
 			;;
 		--jnlp-port=*)
-			JNLP_PORT="${1#*=}"
+			JNLP_PORT=${1#*=}
 			;;
 		--user=*)
 			JENKINS_USER=${1#*=}

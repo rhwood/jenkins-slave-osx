@@ -67,7 +67,7 @@ if [ "$COMMAND" == "set-password" ]; then
 	fi
 elif [ "$COMMAND" == "get-password" ]; then
 	if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
-		security find-generic-password -U -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+		security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
 	fi
 elif [ "$COMMAND" == "add-java-certificate" ]; then
 	if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then

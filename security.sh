@@ -48,6 +48,9 @@ while [ $# -gt 0 ]; do
 		--alias=*)
 			ALIAS=${1#*=}
 			;;
+		*)
+			echo "Unknown option $1" 1>&2
+			;;
 	esac
 	shift
 done

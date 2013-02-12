@@ -45,6 +45,10 @@ done
 [ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
 JENKINS_JNLP_URL=${JENKINS_MASTER}${JNLP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
 
+echo
+echo "Starting at `date`"
+echo
+
 # Download slave.jar. This ensures that everytime this daemon is loaded, we get the correct slave.jar
 # from the Master. We loop endlessly to get the jar, so that if we start before networking, we ensure
 # the jar gets loaded anyway.
@@ -83,4 +87,6 @@ while [ true ]; do
 		sleep 60
 	fi
 done
-echo "Quitting"
+echo
+echo "Stopping at `date`"
+echo

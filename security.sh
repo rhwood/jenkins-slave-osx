@@ -9,7 +9,7 @@
 
 OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
 OSX_KEYCHAIN_PASS=""
-JAVA_KEYSTORE="org.jenkins-ci.slave.jnlp.jks"
+JAVA_KEYSTORE="~/Library/Keychains/org.jenkins-ci.slave.jnlp.jks"
 ACCOUNT=""
 SERVICE=""
 PASSWORD=""
@@ -75,7 +75,7 @@ elif [ "$COMMAND" == "get-password" ]; then
 elif [ "$COMMAND" == "add-java-certificate" ]; then
 	if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then
 		KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s ${SERVICE} ${OSX_KEYCHAIN} )
-		keytool -import -alias ${ALIAS} -file ${CERTIFICATE} -keystore ~/.keystore -storepass ${KEYSTORE_PASS}
+		keytool -import -alias ${ALIAS} -file ${CERTIFICATE} -keystore ${JAVA_KEYSTORE} -storepass ${KEYSTORE_PASS}
 	fi
 fi
 security lock-keychain ${OSX_KEYCHAIN}

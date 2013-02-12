@@ -9,7 +9,7 @@ HTTP_PORT=''
 JENKINS_USER=''
 JENKINS_TOKEN=''
 JAVA_ARGS=''
-JAVA_TRUSTSTORE=${JENKINS_HOME}/.keystore
+JAVA_TRUSTSTORE=${JENKINS_HOME}/Library/Keychains/org.jenkins-ci.slave.jnlp.jks
 JAVA_TRUSTSTORE_PASS=''
 
 if [ -f ${JENKINS_CONF} ]; then

@@ -72,7 +72,7 @@ while [ true ]; do
 	fi
 	# The user and API token are required for Jenkins >= 1.498
 	if [ ! -z ${JENKINS_USER} ]; then
-		#JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
+		JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 	fi
 	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}

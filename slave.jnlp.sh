@@ -79,6 +79,7 @@ while [ true ]; do
 		JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 	fi
+	echo "Calling java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}"
 	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then

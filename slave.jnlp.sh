@@ -9,6 +9,7 @@ HTTP_PORT=''
 JENKINS_USER=''
 JENKINS_TOKEN=''
 JAVA_ARGS=''
+JAVA_ARGS_LOG=''
 JAVA_TRUSTSTORE=${JENKINS_HOME}/Library/Keychains/org.jenkins-ci.slave.jnlp.jks
 JAVA_TRUSTSTORE_PASS=''
 
@@ -72,6 +73,7 @@ while [ true ]; do
 	# in the OS X Keychain that we use for other purposes.
 	if [[ -f $JAVA_TRUSTSTORE ]]; then
 		JAVA_TRUSTSTORE_PASS=$( ${JENKINS_HOME}/security.sh get-password --account=`whoami` --service=java_truststore )
+		JAVA_ARGS_LOG="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=********"
 		JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASS}" 
 	fi
 	# The user and API token are required for Jenkins >= 1.498
@@ -79,7 +81,7 @@ while [ true ]; do
 		JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 	fi
-	echo "Calling java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
+	echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
 	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then

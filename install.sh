@@ -236,7 +236,7 @@ This service logs to /var/log/${SERVICE_USER}/jenkins.log
 		read -p "Open Console.app to view logs now (yes/no) [yes]? " CONFIRM
 		CONFIRM=${CONFIRM:-"yes"}
 		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-			open /var/log/${SERVICE_USER}/jenkinsorg.jenkins-ci.slave.jnlp.log
+			open /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 		fi
 	fi
 }

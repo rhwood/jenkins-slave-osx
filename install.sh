@@ -151,7 +151,8 @@ function configure_daemon {
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`}
 	create_keychain
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=${SLAVE_NODE}
-	KEYSTORE_PASS=`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`
+	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
+	KEYSTORE_PASS=${KEYSTORE_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`}
 	if [ "$PROTOCOL" == "https" ]; then
 		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
 		if sudo -i -u ${SERVICE_USER} java ${JAVA_ARGS} -jar ${SERVICE_HOME}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
@@ -171,7 +172,9 @@ a CA, the root CA's public certificate must be imported.
 					read -p "Path to certificate: " MASTER_CERT
 				done
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
-				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${MASTER_CERT}
+				sudo cp $MASTER_CERT ${SERVICE_HOME}/jenkins-cert
+				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${SERVICE_HOME}/jenkins-cert
+				sudo rm ${SERVICE_HOME}/jenkins-cert
 			fi
 		fi
 	fi

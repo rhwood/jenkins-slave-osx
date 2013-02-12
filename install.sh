@@ -81,6 +81,11 @@ function process_args {
 		sudo chmod 666 ${SERVICE_CONF}
 		source ${SERVICE_CONF}
 		sudo chmod 400 ${SERVICE_CONF}
+		SLAVE_NODE=${SLAVE_NODE:-$JENKINS_SLAVE}
+		MASTER=${MASTER:-$JENKINS_MASTER}
+		MASTER_JNLP_PORT=${JNLP_PORT}
+		MASTER_HTTP_PORT=${HTTP_PORT}
+		MASTER_USER=${MASTER_USER:-$JENKINS_USER}
 	fi
 	if [ -f ${SERVICE_HOME}/Library/.keychain_pass ]; then
 		sudo chmod 666 ${SERVICE_HOME}/Library/.keychain_pass

@@ -16,6 +16,7 @@ PASSWORD=""
 CERTIFICATE=""
 ALIAS=""
 COMMAND=""
+CACERT=""
 
 if [ -f ~/Library/Keychains/.keychain_pass ]; then
 	chmod 400 ~/Library/Keychains/.keychain_pass
@@ -44,6 +45,9 @@ while [ $# -gt 0 ]; do
 			;;
 		--certificate=*)
 			CERTIFICATE=${1#*=}
+			;;
+		--authority)
+			CA_CERT="-trustcacert"
 			;;
 		--alias=*)
 			ALIAS=${1#*=}
@@ -75,7 +79,7 @@ elif [ "$COMMAND" == "get-password" ]; then
 elif [ "$COMMAND" == "add-java-certificate" ]; then
 	if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then
 		KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
-		keytool -importcert -alias ${ALIAS} -file ${CERTIFICATE} -keystore ${JAVA_KEYSTORE} -storepass ${KEYSTORE_PASS}
+		keytool -importcert ${CA_CERT} -alias ${ALIAS} -file ${CERTIFICATE} -keystore ${JAVA_KEYSTORE} -storepass ${KEYSTORE_PASS}
 	fi
 fi
 security lock-keychain ${OSX_KEYCHAIN}

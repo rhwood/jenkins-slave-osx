@@ -21,6 +21,7 @@ SLAVE_TOKEN=""
 DEV_PROFILE=""
 OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
 OSX_KEYCHAIN_PASS=""
+CA_CERT=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 
@@ -98,7 +99,8 @@ function process_args {
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
 			--jnlp-port=*) MASTER_JNLP_PORT=${1#*=} ;;
-			--certificate=*) MASTER_CERT=${1#*=} ;;
+			--certificate=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
+			--ca-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="--ca-cert" ;;
 			--profile=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
 		esac
@@ -157,6 +159,7 @@ function configure_daemon {
 		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
 		if sudo -i -u ${SERVICE_USER} java ${JAVA_ARGS} -jar ${SERVICE_HOME}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
 			if [ -z $MASTER_CERT ]; then
+				CA_CERT="query"
 				echo "
 The certificate for ${MASTER_NAME} is not trusted by java
 
@@ -171,9 +174,16 @@ a CA, the root CA's public certificate must be imported.
 					echo "Unable to read ${MASTER_CERT}"
 					read -p "Path to certificate: " MASTER_CERT
 				done
+				if [ "${CA_CERT}" == "query" ]; then
+					echo
+					read -p "Is this a self-signed certificate? (yes/no) [yes] " CA_CERT
+					if [[ "${CA_CERT}" =~ ^[Nn] ]] ; then
+						CA_CERT="--ca-cert"
+					fi
+				fi
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 				sudo cp $MASTER_CERT ${SERVICE_HOME}/jenkins-cert
-				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate --alias=jenkins-cert --certificate=${SERVICE_HOME}/jenkins-cert
+				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate ${CA_CERT} --alias=jenkins-cert --certificate=${SERVICE_HOME}/jenkins-cert
 				sudo rm ${SERVICE_HOME}/jenkins-cert
 			fi
 		fi

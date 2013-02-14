@@ -244,7 +244,7 @@ This service can be started using the command
 and stopped using the command
 	sudo launchctl unload org.jenkins-ci.slave.jnlp.plist
 
-This service logs to /var/log/${SERVICE_USER}/jenkins.log
+This service logs to /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 "
 	read -p "Start the slave service now (yes/no) [yes]? " CONFIRM
 	CONFIRM=${CONFIRM:-"yes"}

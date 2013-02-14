@@ -193,7 +193,7 @@ chain, you will need to:
 1) copy or download the certificates into ${SERVICE_HOME}
 2) use the following command:
 sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \
---alias=WHATEVER --certificate=/path/to/certificate
+--alias=AN_ALIAS --certificate=/path/to/certificate
 If the certificate is a Root CA cert, add the --ca-cert flag to the above
 command.
 "

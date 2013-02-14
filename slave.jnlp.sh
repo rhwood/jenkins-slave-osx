@@ -67,29 +67,27 @@ done
 
 echo "Launching slave process at ${JENKINS_JNLP_URL}"
 RESULT=-1
-while [ true ]; do
-	# If we use a trustStore for the Jenkins Master certificates, we need to pass it
-	# and its password to the java process that runs the slave. The password is stored
-	# in the OS X Keychain that we use for other purposes.
-	if [[ -f $JAVA_TRUSTSTORE ]]; then
-		JAVA_TRUSTSTORE_PASS=$( ${JENKINS_HOME}/security.sh get-password --account=`whoami` --service=java_truststore )
-		JAVA_ARGS_LOG="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=********"
-		JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASS}" 
-	fi
-	# The user and API token are required for Jenkins >= 1.498
-	if [ ! -z ${JENKINS_USER} ]; then
-		JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
-		JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
-	fi
-	echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
-	java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
-	RESULT=$?
-	if [ $RESULT -eq 0 ]; then
-		break
-	else
-		sleep 60
-	fi
-done
+# If we use a trustStore for the Jenkins Master certificates, we need to pass it
+# and its password to the java process that runs the slave. The password is stored
+# in the OS X Keychain that we use for other purposes.
+if [[ -f $JAVA_TRUSTSTORE ]]; then
+	JAVA_TRUSTSTORE_PASS=$( ${JENKINS_HOME}/security.sh get-password --account=`whoami` --service=java_truststore )
+	JAVA_ARGS_LOG="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=********"
+	JAVA_ARGS="${JAVA_ARGS} -Djavax.net.ssl.trustStore=${JAVA_TRUSTSTORE} -Djavax.net.ssl.trustStorePassword=${JAVA_TRUSTSTORE_PASS}" 
+fi
+# The user and API token are required for Jenkins >= 1.498
+if [ ! -z ${JENKINS_USER} ]; then
+	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
+	JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
+fi
+echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
+java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
+RESULT=$?
+if [ $RESULT -eq 0 ]; then
+	break
+else
+	sleep 60
+fi
 echo
 echo "Stopping at `date`"
 echo

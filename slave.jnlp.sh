@@ -83,11 +83,7 @@ fi
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
 java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
 RESULT=$?
-if [ $RESULT -eq 0 ]; then
-	break
-else
-	sleep 60
-fi
 echo
 echo "Stopping at `date`"
 echo
+exit $RESULT

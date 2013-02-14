@@ -181,10 +181,22 @@ a CA, the root CA's public certificate must be imported.
 						CA_CERT="--ca-cert"
 					fi
 				fi
+				echo "Installing certificate..."
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 				sudo cp $MASTER_CERT ${SERVICE_HOME}/jenkins-cert
 				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate ${CA_CERT} --alias=jenkins-cert --certificate=${SERVICE_HOME}/jenkins-cert
 				sudo rm ${SERVICE_HOME}/jenkins-cert
+				echo
+				echo "
+If you need to install additional certificates, such as a complete certificate
+chain, you will need to:
+1) copy or download the certificates into ${SERVICE_HOME}
+2) use the following command:
+sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \
+--alias=WHATEVER --certificate=/path/to/certificate
+If the certificate is a Root CA cert, add the --ca-cert flag to the above
+command.
+"
 			fi
 		fi
 	fi

@@ -101,6 +101,7 @@ function process_args {
 			--jnlp-port=*) MASTER_JNLP_PORT=${1#*=} ;;
 			--certificate=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
 			--ca-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="--ca-cert" ;;
+			--root-ca=*) MASTER_CA=${1#*=} ;;
 			--profile=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
 		esac
@@ -165,7 +166,8 @@ The certificate for ${MASTER_NAME} is not trusted by java
 
 If ${MASTER_NAME} has a self-signed certifate, the public certificate
 must be imported. If the certificate for ${MASTER_NAME} is signed by
-a CA, the root CA's public certificate must be imported.
+a certificate authority, you may need to import both the root and server CA
+certificates.
 "
 				read -p "Path to certificate: " MASTER_CERT
 			fi
@@ -188,8 +190,8 @@ a CA, the root CA's public certificate must be imported.
 				sudo rm ${SERVICE_HOME}/jenkins-cert
 				echo
 				echo "
-If you need to install additional certificates, such as a complete certificate
-chain, you will need to:
+If you need to install additional certificates, such as additional CA
+certificates, you will need to:
 1) copy or download the certificates into ${SERVICE_HOME}
 2) use the following command:
 sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \

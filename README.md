@@ -38,3 +38,17 @@ Simply rerun the installer. It will reinstall the scripts, but use existing conf
 ## Configuration
 The following file in ``/var/lib/jenkins`` (assuming you installed this service in the default location) can be used to configure this service:
 ``Library/Preferences/org.jenkins-ci.slave.jnlp.conf``
+
+
+
+## Adding Server Certificates
+If you decide to secure the Jenkins master, or need to add additional certificates for the slave to trust the Jenkins master, you only need (assuming your service account is "jenkins", and your CA is StartSSL.com) from a command line:
+1. `sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`
+2. `sudo -i -u jenkins`
+3. `curl -O http://www.startssl.com/certs/ca.crt`
+4. `./security.sh add-java-certificate --ca-cert --alias=server-cert --certificate=./ca.crt`
+5. `curl -O http://www.startssl.com/certs/sub.class1.server.ca.crt`
+6. `./security.sh add-java-certificate --alias=server-cert --certificate=./sub.class1.server.ca.crt`
+7. `rm ./*ca.crt`
+8. `exit`
+9. `sudo launchctl load /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`

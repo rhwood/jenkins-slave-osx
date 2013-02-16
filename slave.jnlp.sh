@@ -13,6 +13,24 @@ JAVA_ARGS_LOG=''
 JAVA_TRUSTSTORE=${JENKINS_HOME}/.keystore
 JAVA_TRUSTSTORE_PASS=''
 
+# called when unloaded by launchctl
+function unload() {
+	${JENKINS_HOME}/security.sh lock
+	PID=`cat ${JENKINS_HOME}/.slave.pid`
+	if [ "$PID" != "" ]; then
+		kill $PID
+		wait $PID
+	fi
+	echo
+	echo "Stopping at `date`"
+	echo
+	exit 0
+}
+
+# launchctl sends SIGTERM to unload a daemon
+# trap SIGTERM to be able to gracefully cleanup
+trap "unload" HUP INT TERM
+
 if [ -f ${JENKINS_CONF} ]; then
 	chmod 400 ${JENKINS_CONF}
 	source ${JENKINS_CONF}
@@ -82,10 +100,7 @@ if [ ! -z ${JENKINS_USER} ]; then
 fi
 ${JENKINS_HOME}/security.sh unlock
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
-java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
-RESULT=$?
-${JENKINS_HOME}/security.sh lock
-echo
-echo "Stopping at `date`"
-echo
-exit $RESULT
+java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN} &
+echo $! > ${JENKINS_HOME}/.slave.pid
+wait `cat ${JENKINS_HOME}/.slave.pid`
+unload

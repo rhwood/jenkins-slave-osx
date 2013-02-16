@@ -209,6 +209,12 @@ command.
 		echo "NOTE: The installer is not capable of testing that this port is correct"
 		read -p "JNLP port [$MASTER_JNLP_PORT]: " MASTER_JNLP_PORT
 	fi
+	echo
+	echo "
+If you need to do additional tasks to setup ${SERVICE_USER}, you can
+sudo -i -u ${SERVICE_USER}
+in Terminal to open a shell running as ${SERVICE_USER}
+"
 }
 
 function create_keychain {

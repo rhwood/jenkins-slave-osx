@@ -9,6 +9,7 @@
 
 OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
 OSX_KEYCHAIN_PASS=""
+OSX_KEYCHAIN_LOCK=~/Library/Keychains/.${OSX_KEYCHAIN}.lock
 ACCOUNT=""
 SERVICE=""
 PASSWORD=""
@@ -24,7 +25,7 @@ fi
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		set-password|get-password|add-java-certificate)
+		set-password|get-password|add-java-certificate|unlock|lock)
 			COMMAND=$1
 			;;
 		--keychain-password=*)
@@ -53,6 +54,7 @@ while [ $# -gt 0 ]; do
 			;;
 		*)
 			echo "Unknown option $1" 1>&2
+			exit 2
 			;;
 	esac
 	shift
@@ -66,19 +68,33 @@ if [ ! -f ~/Library/Keychains/${OSX_KEYCHAIN} ]; then
 	exit 1
 fi
 
-security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
-if [ "$COMMAND" == "set-password" ]; then
-	if [[ ! -z $ACCOUNT && ! -z $SERVICE && ! -z $PASSWORD ]]; then
-		security add-generic-password -U -w ${PASSWORD} -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
-	fi
-elif [ "$COMMAND" == "get-password" ]; then
-	if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
-		security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
-	fi
-elif [ "$COMMAND" == "add-java-certificate" ]; then
-	if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then
-		KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
-		keytool -import ${CA_CERT} -alias ${ALIAS} -file ${CERTIFICATE} -storepass ${KEYSTORE_PASS}
-	fi
+if [ "$COMMAND" != "lock" ]; then
+	security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
 fi
-security lock-keychain ${OSX_KEYCHAIN}
+case $COMMAND in
+	set-password)
+		if [[ ! -z $ACCOUNT && ! -z $SERVICE && ! -z $PASSWORD ]]; then
+			security add-generic-password -U -w ${PASSWORD} -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+		fi
+		;;
+	get-password)		
+		if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
+			security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+		fi
+		;;
+	add-java-certificate)
+		if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then
+			KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
+			keytool -import ${CA_CERT} -alias ${ALIAS} -file ${CERTIFICATE} -storepass ${KEYSTORE_PASS}
+		fi
+		;;
+	lock)
+		rm ${OSX_KEYCHAIN_LOCK}
+		;;
+	unlock)
+		touch ${OSX_KEYCHAIN_LOCK}
+		;;
+esac
+if [[ "$COMMAND" != "unlock" || ! -f ${OSX_KEYCHAIN_LOCK} ]]; then
+	security lock-keychain ${OSX_KEYCHAIN}
+fi

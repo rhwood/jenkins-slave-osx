@@ -80,9 +80,11 @@ if [ ! -z ${JENKINS_USER} ]; then
 	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 	JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 fi
+${JENKINS_HOME}/security.sh unlock
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
 java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN}
 RESULT=$?
+${JENKINS_HOME}/security.sh lock
 echo
 echo "Stopping at `date`"
 echo

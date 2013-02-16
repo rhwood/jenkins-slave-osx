@@ -25,7 +25,7 @@ fi
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		set-password|get-password|add-java-certificate|unlock|lock)
+		set-password|get-password|add-java-certificate|add-apple-certificate|unlock|lock)
 			COMMAND=$1
 			;;
 		--keychain-password=*)
@@ -80,6 +80,11 @@ case $COMMAND in
 	get-password)		
 		if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
 			security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+		fi
+		;;
+	add-apple-certificate)
+		if [[ -f $CERTIFICATE ]]; then
+			security import $CERTIFICATE -k ${OSX_KEYCHAIN}
 		fi
 		;;
 	add-java-certificate)

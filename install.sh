@@ -261,12 +261,16 @@ function configure_adc {
 		echo "Importing WWDR intermediate certificate..."
 		sudo -i -u ${SERVICE_USER} curl  --silent --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
 		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
-		sudo -i -u rm ${SERVICE_HOME}/AppleWWDRCA.cer
+		sudo -i rm ${SERVICE_HOME}/AppleWWDRCA.cer
 		echo "Importing developer certificate..."
-		while [ ! -f $DEV_PROFILE ]; then
-			read -p "Path to certificate " DEV_PROFILE
+		if [ -z "${DEV_PROFILE}" ]; then
+			read -p "Path to certificate: " DEV_PROFILE
 		fi
-		sudo cp $DEV_PROFILE ${SERVICE_HOME}/.dev.cer
+		while [ ! -f ${DEV_PROFILE} ]; do
+			echo "Unable to read ${DEV_PROFILE}"
+			read -p "Path to certificate: " DEV_PROFILE
+		done
+		sudo cp ${DEV_PROFILE} ${SERVICE_HOME}/.dev.cer
 		sudo chmod 666 ${SERVICE_HOME}/.dev.cer
 		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/.dev.cer
 		sudo rm ${SERVICE_HOME}/.dev.cer

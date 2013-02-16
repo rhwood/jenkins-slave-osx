@@ -46,9 +46,9 @@ If you decide to secure the Jenkins master, or need to add additional certificat
 1. `sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`
 2. `sudo -i -u jenkins`
 3. `curl -O http://www.startssl.com/certs/ca.crt`
-4. `./security.sh add-java-certificate --ca-cert --alias=server-cert --certificate=./ca.crt`
+4. `./security.sh add-java-certificate --ca-cert --alias=root-ca --certificate=./ca.crt`
 5. `curl -O http://www.startssl.com/certs/sub.class1.server.ca.crt`
-6. `./security.sh add-java-certificate --alias=server-cert --certificate=./sub.class1.server.ca.crt`
+6. `./security.sh add-java-certificate --alias=ca-server --certificate=./sub.class1.server.ca.crt`
 7. `rm ./*ca.crt`
 8. `exit`
 9. `sudo launchctl load /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`

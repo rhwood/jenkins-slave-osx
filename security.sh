@@ -83,7 +83,7 @@ case $COMMAND in
 		fi
 		;;
 	add-apple-certificate)
-		if [[ -f $CERTIFICATE ]]; then
+		if [ -f $CERTIFICATE ]; then
 			security import $CERTIFICATE -k ${OSX_KEYCHAIN} -T /usr/bin/codesign
 		fi
 		;;

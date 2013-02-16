@@ -99,7 +99,7 @@ function process_args {
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
 			--jnlp-port=*) MASTER_JNLP_PORT=${1#*=} ;;
-			--certificate=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
+			--master-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
 			--ca-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="--ca-cert" ;;
 			--root-ca=*) MASTER_CA=${1#*=} ;;
 			--profile=*) DEV_PROFILE=${1#*=} ;;
@@ -351,6 +351,8 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	install_files
 	echo "Configuring daemon..."
 	configure_daemon
+	#create_ssh_keys
+	#configure_github
 	write_config
 	start_daemon
 else

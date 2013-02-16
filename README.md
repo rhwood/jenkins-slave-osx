@@ -22,7 +22,7 @@ OS X slaves created with this script:
 `bash <( curl -L https://raw.github.com/rhwood/jenkins-slave-osx/master/install.sh ) [options]`
 
 The install script has the following options:
-* `--certificate=/path/to/cert.cer` to install either a self-signed certificate for the Jenkins master, or the root certificate of the CA that signed the Jenkins master certificate. *Optional;* the installer prompts for this as needed.
+* `--master-cert=/path/to/cert.cer` to install either a self-signed certificate for the Jenkins master, or the root certificate of the CA that signed the Jenkins master certificate. *Optional;* the installer prompts for this as needed.
 * `--java-args="ARGS"` to specify any optional java arguments. *Optional;* the installer does not test these arguments.
 * `--master=URL` to specify the Jenkins Master on the command line. *Optional;* the installer prompts for this if not specified on the command line.
 * `--node=NAME` to specify the Slave's node name. *Optional;* this defaults to the OS X hostname and is verified by the installer.

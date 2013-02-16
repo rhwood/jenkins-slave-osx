@@ -217,6 +217,30 @@ in Terminal to open a shell running as ${SERVICE_USER}
 "
 }
 
+function create_ssh_keys {
+	if [ ! -f ${SERVICE_HOME}/.ssh/id_rsa ]; then
+		echo "
+Do you wish to create SSH keys for this ${SERVICE_USER}? These keys will be
+suitable for GitHub, amoung other services. Keys generated at this point will
+not be protected by a password.
+"
+		read -p "Create SSH keys? (yes/no) [yes]" CONFIRM
+		CONFIRM=${CONFIRM:-yes}
+		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N '' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
+		fi
+		echo "
+You will need to connect to each SSH host as ${SERVICE_USER} to add the host
+to the known_hosts file to allow uninterrupted connection to the host.
+"
+		read -p "Add GitHub.com to known hosts? (yes/no) [yes]" CONFIRM
+		CONFIRM=${CONFIRM:-yes}
+		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+			sudo -i -u ${SERVICE_USER} ssh git@github.com
+		fi
+	fi
+}
+
 function create_keychain {
 	local KEYCHAINS=${SERVICE_HOME}/Library/Keychains
 	if [ ! -d ${KEYCHAINS} ]; then

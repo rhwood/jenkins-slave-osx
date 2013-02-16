@@ -102,7 +102,7 @@ function process_args {
 			--master-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
 			--ca-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="--ca-cert" ;;
 			--root-ca=*) MASTER_CA=${1#*=} ;;
-			--profile=*) DEV_PROFILE=${1#*=} ;;
+			--developer-cert=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
 		esac
 		shift
@@ -254,6 +254,25 @@ logged into GitHub as the user that Jenkins connects to GitHub as
 	fi
 }
 
+function configure_adc {
+	read -p "Will this slave need Apple Developer Certificates? (yes/no) [yes]" CONFIRM
+	CONFIRM=${CONFIRM:-yes}
+	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+		echo "Importing WWDR intermediate certificate..."
+		sudo -i -u ${SERVICE_USER} curl  --silent --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
+		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
+		sudo -i -u rm ${SERVICE_HOME}/AppleWWDRCA.cer
+		echo "Importing developer certificate..."
+		while [ ! -f $DEV_PROFILE ]; then
+			read -p "Path to certificate " DEV_PROFILE
+		fi
+		sudo cp $DEV_PROFILE ${SERVICE_HOME}/.dev.cer
+		sudo chmod 666 ${SERVICE_HOME}/.dev.cer
+		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/.dev.cer
+		sudo rm ${SERVICE_HOME}/.dev.cer
+	fi
+}
+
 function create_keychain {
 	local KEYCHAINS=${SERVICE_HOME}/Library/Keychains
 	if [ ! -d ${KEYCHAINS} ]; then
@@ -351,6 +370,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	install_files
 	echo "Configuring daemon..."
 	configure_daemon
+	configure_adc
 	#create_ssh_keys
 	#configure_github
 	write_config

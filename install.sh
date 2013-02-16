@@ -233,10 +233,23 @@ not be protected by a password.
 You will need to connect to each SSH host as ${SERVICE_USER} to add the host
 to the known_hosts file to allow uninterrupted connection to the host.
 "
-		read -p "Add GitHub.com to known hosts? (yes/no) [yes]" CONFIRM
-		CONFIRM=${CONFIRM:-yes}
-		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-			sudo -i -u ${SERVICE_USER} ssh git@github.com
+	fi
+}
+
+function configure_github {
+	read -p "Will this slave need to connect to GitHub? (yes/no) [no]" CONFIRM
+	CONFIRM=${CONFIRM:-no}
+	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+		sudo -i -u ${SERVICE_USER} ssh -T git@github.com
+		RESULT=$?
+		if [ $RESULT -eq 255 ] ; then
+			echo "
+You need to add the ssh keys to the GitHub account that Jenkins uses
+
+Copy the following key to https://github.com/settings/ssh after you have
+logged into GitHub as the user that Jenkins connects to GitHub as
+"
+			sudo -i -u ${SERVICE_USER} cat ${SERVICE_HOME}/.ssh/id_rsa.pub
 		fi
 	fi
 }

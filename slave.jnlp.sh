@@ -62,7 +62,7 @@ done
 
 [ ! -z $JNLP_PORT ] && JNLP_PORT=":${JNLP_PORT}"
 [ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
-JENKINS_JNLP_URL=${JENKINS_MASTER}${JNLP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
+JENKINS_JNLP_URL=${JENKINS_MASTER}${HTTP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
 
 echo
 echo "Starting at `date`"

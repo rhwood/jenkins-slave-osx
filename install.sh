@@ -15,7 +15,7 @@ MASTER=""
 MASTER_HTTP_PORT=""
 SLAVE_NODE=""
 SLAVE_TOKEN=""
-OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
+OSX_KEYCHAIN="login.keychain"
 OSX_KEYCHAIN_PASS=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
@@ -255,6 +255,15 @@ function create_keychain {
 		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
 		sudo chmod 755 ${KEYCHAINS}
 	fi
+	echo "
+The OS X Keychain password for ${SERVICE_USER} is ${OSX_KEYCHAIN_PASS}
+You will need to copy this into the Jenkins configuration on ${MASTER_NAME}
+for every project that will be compiled on this slave, or copy a special
+per-project Keychain to ${SERVICE_HOME}/Library/Keychains.
+
+Note that the login Keychain for ${SERVICE_USER} contains secrets needed for
+${SLAVE_NODE} to connect to ${MASTER_NAME}.
+"
 }
 
 function write_config {

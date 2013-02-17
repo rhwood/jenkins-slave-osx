@@ -7,7 +7,7 @@
 # get-password --account=ACCOUNT --service=SERVICE
 # add-java-certificate --alias=ALIAS --certificate=/path/to/certificate
 
-OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
+OSX_KEYCHAIN="login.keychain"
 OSX_KEYCHAIN_PASS=""
 OSX_KEYCHAIN_LOCK=~/Library/Keychains/.${OSX_KEYCHAIN}.lock
 ACCOUNT=""

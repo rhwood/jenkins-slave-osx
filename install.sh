@@ -13,15 +13,10 @@ MASTER_NAME=""							# set default to jenkins later
 MASTER_USER=""							# set default to `whoami` later
 MASTER=""
 MASTER_HTTP_PORT=""
-MASTER_JNLP_PORT=""
-MASTER_CERT=""
-MASTER_CA=""
 SLAVE_NODE=""
 SLAVE_TOKEN=""
-DEV_PROFILE=""
 OSX_KEYCHAIN="org.jenkins-ci.slave.jnlp.keychain"
 OSX_KEYCHAIN_PASS=""
-CA_CERT=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 
@@ -84,7 +79,6 @@ function process_args {
 		sudo chmod 400 ${SERVICE_CONF}
 		SLAVE_NODE=${SLAVE_NODE:-$JENKINS_SLAVE}
 		MASTER=${MASTER:-$JENKINS_MASTER}
-		MASTER_JNLP_PORT=${JNLP_PORT}
 		MASTER_HTTP_PORT=${HTTP_PORT}
 		MASTER_USER=${MASTER_USER:-$JENKINS_USER}
 	fi
@@ -98,11 +92,6 @@ function process_args {
 			--node=*) SLAVE_NODE=${1#*=} ;;
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
-			--jnlp-port=*) MASTER_JNLP_PORT=${1#*=} ;;
-			--master-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="" ;;
-			--ca-cert=*) MASTER_CERT=${1#*=} ; CA_CERT="--ca-cert" ;;
-			--root-ca=*) MASTER_CA=${1#*=} ;;
-			--developer-cert=*) DEV_PROFILE=${1#*=} ;;
 			--java-args=*) JAVA_ARGS=${1#*=} ;;
 		esac
 		shift
@@ -156,42 +145,19 @@ function configure_daemon {
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=${SLAVE_NODE}
 	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
 	KEYSTORE_PASS=${KEYSTORE_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 20`}
+	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 	if [ "$PROTOCOL" == "https" ]; then
-		sudo -i -u ${SERVICE_USER} curl --location --url ${MASTER}/jnlpJars/slave.jar --silent --output ${SERVICE_HOME}/slave.jar
-		if sudo -i -u ${SERVICE_USER} java ${JAVA_ARGS} -jar ${SERVICE_HOME}/slave.jar -jnlpUrl ${MASTER}/computer/${SLAVE_NODE}/slave-agent.jnlp -jnlpCredentials ${MASTER_USER}:${SLAVE_TOKEN} 2>&1 | grep -q '\-noCertificateCheck' ; then
-			if [ -z $MASTER_CERT ]; then
-				CA_CERT="query"
-				echo "
-The certificate for ${MASTER_NAME} is not trusted by java
+		echo "
+If the certificate for ${MASTER_NAME} is not trusted by Java, you will need 
+to install public certificates required for Java to trust ${MASTER_NAME}.
+NOTE: The installer is not capable of testing that Java trusts ${MASTER_NAME}.
 
 If ${MASTER_NAME} has a self-signed certifate, the public certificate
 must be imported. If the certificate for ${MASTER_NAME} is signed by
 a certificate authority, you may need to import both the root and server CA
 certificates.
-"
-				read -p "Path to certificate: " MASTER_CERT
-			fi
-			if [ ! -z $MASTER_CERT ]; then
-				while [ ! -f $MASTER_CERT ]; do
-					echo "Unable to read ${MASTER_CERT}"
-					read -p "Path to certificate: " MASTER_CERT
-				done
-				if [ "${CA_CERT}" == "query" ]; then
-					echo
-					read -p "Is this a self-signed certificate? (yes/no) [yes] " CA_CERT
-					if [[ "${CA_CERT}" =~ ^[Nn] ]] ; then
-						CA_CERT="--ca-cert"
-					fi
-				fi
-				echo "Installing certificate..."
-				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
-				sudo cp $MASTER_CERT ${SERVICE_HOME}/jenkins-cert
-				sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate ${CA_CERT} --alias=jenkins-cert --certificate=${SERVICE_HOME}/jenkins-cert
-				sudo rm ${SERVICE_HOME}/jenkins-cert
-				echo
-				echo "
-If you need to install additional certificates, such as additional CA
-certificates, you will need to:
+
+To install certificates, you will need to:
 1) copy or download the certificates into ${SERVICE_HOME}
 2) use the following command:
 sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \
@@ -199,16 +165,9 @@ sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \
 If the certificate is a Root CA cert, add the --ca-cert flag to the above
 command.
 "
-			fi
-		fi
 	fi
-	if [ -z $MASTER_JNLP_PORT ]; then
-		echo
-		echo "The JNLP port on $MASTER may need to be specified"
-		echo "This port is listed at ${MASTER}${MASTER_HTTP_PORT}/configureSecurity"
-		echo "NOTE: The installer is not capable of testing that this port is correct"
-		read -p "JNLP port [$MASTER_JNLP_PORT]: " MASTER_JNLP_PORT
-	fi
+	create_ssh_keys
+	configure_github
 	echo
 	echo "
 If you need to do additional tasks to setup ${SERVICE_USER}, you can
@@ -231,7 +190,12 @@ not be protected by a password.
 		fi
 		echo "
 You will need to connect to each SSH host as ${SERVICE_USER} to add the host
-to the known_hosts file to allow uninterrupted connection to the host.
+to the known_hosts file to allow the service to use SSH. This can be done
+using the following command:
+sudo -i -u ${SERVICE_USER} ssh account@service
+
+To get ${SERVICE_USER}'s public key to add to a service to allow SSH:
+sudo -i -u ${SERVICE_USER} cat ${SERVICE_HOME}/.ssh/id_rsa.pub
 "
 	fi
 }
@@ -240,6 +204,7 @@ function configure_github {
 	read -p "Will this slave need to connect to GitHub? (yes/no) [no]" CONFIRM
 	CONFIRM=${CONFIRM:-no}
 	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+		echo "Attempting to SSH to GitHub... You may be prompted to trust github.com."
 		sudo -i -u ${SERVICE_USER} ssh -T git@github.com
 		RESULT=$?
 		if [ $RESULT -eq 255 ] ; then
@@ -262,18 +227,14 @@ function configure_adc {
 		sudo -i -u ${SERVICE_USER} curl  --silent --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
 		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
 		sudo -i rm ${SERVICE_HOME}/AppleWWDRCA.cer
-		echo "Importing developer certificate..."
-		if [ -z "${DEV_PROFILE}" ]; then
-			read -p "Path to certificate: " DEV_PROFILE
-		fi
-		while [ ! -f ${DEV_PROFILE} ]; do
-			echo "Unable to read ${DEV_PROFILE}"
-			read -p "Path to certificate: " DEV_PROFILE
-		done
-		sudo cp ${DEV_PROFILE} ${SERVICE_HOME}/.dev.cer
-		sudo chmod 666 ${SERVICE_HOME}/.dev.cer
-		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/.dev.cer
-		sudo rm ${SERVICE_HOME}/.dev.cer
+		echo "
+You will need to import your own developer certificates following these steps:
+1) Export the Certificate and Key from Keychain for your developer profiles.
+2) sudo cp /path/to/exported-keys-and-certificates ${SERVICE_HOME}
+3) For each certificate and key (this is a single multiline command):
+   sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh \
+   add-apple-certificate --certificate=${SERVICE_HOME}/name-of-exported-cert
+"
 	fi
 }
 
@@ -306,7 +267,6 @@ function write_config {
 	:> ${SERVICE_CONF}
 	echo "JENKINS_SLAVE=${SLAVE_NODE}" >> ${SERVICE_CONF}
 	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
-	echo "JNLP_PORT=${MASTER_JNLP_PORT}" >> ${SERVICE_CONF}
 	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
 	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${SERVICE_CONF}
@@ -375,8 +335,6 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 	echo "Configuring daemon..."
 	configure_daemon
 	configure_adc
-	#create_ssh_keys
-	#configure_github
 	write_config
 	start_daemon
 else

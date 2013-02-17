@@ -4,7 +4,6 @@ JENKINS_HOME=`dirname $0`
 JENKINS_CONF=${JENKINS_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 JENKINS_SLAVE=`hostname -s | tr '[:upper:]' '[:lower:]'`
 JENKINS_MASTER=http://jenkins
-JNLP_PORT=''
 HTTP_PORT=''
 JENKINS_USER=''
 JENKINS_TOKEN=''
@@ -36,31 +35,6 @@ if [ -f ${JENKINS_CONF} ]; then
 	source ${JENKINS_CONF}
 fi
 
-while [ $# -gt 0 ]; do
-	case $1 in
-		--node=*)
-			JENKINS_SLAVE=${1#*=}
-			;;
-		--master=*)
-			JENKINS_MASTER=${1#*=}
-			;;
-		--jnlp-port=*)
-			JNLP_PORT=${1#*=}
-			;;
-		--user=*)
-			JENKINS_USER=${1#*=}
-			;;
-		--keychain=*)
-			OSX_KEYCHAIN=${1#*=}
-			;;
-		--java-args=*)
-			JAVA_ARGS=${1#*=}
-			;;
-	esac
-	shift
-done
-
-[ ! -z $JNLP_PORT ] && JNLP_PORT=":${JNLP_PORT}"
 [ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
 JENKINS_JNLP_URL=${JENKINS_MASTER}${HTTP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
 

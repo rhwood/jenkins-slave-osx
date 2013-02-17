@@ -14,7 +14,6 @@ JAVA_TRUSTSTORE_PASS=''
 
 # called when unloaded by launchctl
 function unload() {
-	${JENKINS_HOME}/security.sh lock
 	PID=`cat ${JENKINS_HOME}/.slave.pid`
 	if [ "$PID" != "" ]; then
 		kill $PID
@@ -72,7 +71,6 @@ if [ ! -z ${JENKINS_USER} ]; then
 	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
 	JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 fi
-${JENKINS_HOME}/security.sh unlock
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"
 java ${JAVA_ARGS} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}${JENKINS_TOKEN} &
 echo $! > ${JENKINS_HOME}/.slave.pid

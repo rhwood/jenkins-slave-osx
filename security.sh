@@ -84,7 +84,7 @@ case $COMMAND in
 		;;
 	add-apple-certificate)
 		if [ -f $CERTIFICATE ]; then
-			security import $CERTIFICATE -k ${OSX_KEYCHAIN} -T /usr/bin/codesign
+			security import $CERTIFICATE -k ${OSX_KEYCHAIN} -A -T /usr/bin/codesign
 		fi
 		;;
 	add-java-certificate)

@@ -25,7 +25,7 @@ fi
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		set-password|get-password|add-java-certificate|add-apple-certificate|unlock|lock)
+		set-password|get-password|add-java-certificate|add-apple-certificate|unlock|lock|show-password)
 			COMMAND=$1
 			;;
 		--keychain-password=*)
@@ -66,6 +66,11 @@ fi
 
 if [ ! -f ~/Library/Keychains/${OSX_KEYCHAIN} ]; then
 	exit 1
+fi
+
+if [ "$COMMAND" == "show-password" ]; then
+	echo ${OSX_KEYCHAIN_PASS}
+	exit 0
 fi
 
 if [ "$COMMAND" != "lock" ]; then

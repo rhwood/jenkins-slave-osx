@@ -43,10 +43,11 @@ The following file in ``/var/lib/jenkins`` (assuming you installed this service 
 
 ## Adding Server Certificates
 If you decide to secure the Jenkins master, or need to add additional certificates for the slave to trust the Jenkins master, you only need (assuming your service account is "jenkins", and your CA is StartSSL.com) from a command line:
+
 1. `sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`
 2. `sudo -i -u jenkins`
 3. `curl -O http://www.startssl.com/certs/ca.crt`
-4. `./security.sh add-java-certificate --ca-cert --alias=root-ca --certificate=./ca.crt`
+4. `./security.sh add-java-certificate --authority --alias=root-ca --certificate=./ca.crt`
 5. `curl -O http://www.startssl.com/certs/sub.class1.server.ca.crt`
 6. `./security.sh add-java-certificate --alias=ca-server --certificate=./sub.class1.server.ca.crt`
 7. `rm ./*ca.crt`

@@ -47,7 +47,7 @@ while [ $# -gt 0 ]; do
 			CERTIFICATE=${1#*=}
 			;;
 		--authority)
-			CA_CERT="-trustcacert"
+			CA_CERT="-trustcacerts"
 			;;
 		--alias=*)
 			ALIAS=${1#*=}

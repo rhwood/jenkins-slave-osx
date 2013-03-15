@@ -24,7 +24,7 @@ function create_user() {
 	# see if user exists
 	if dscl /Local/Default list /Users | grep -q ${SERVICE_USER} ; then
 		echo "Using pre-existing service account ${SERVICE_USER}"
-		SERVICE_HOME=`dscl /Local/Default read /Users/Jenkins NFSHomeDirectory | awk '{print $2}'`
+		SERVICE_HOME=`dscl /Local/Default read /Users/${SERVICE_USER}" NFSHomeDirectory | awk '{print $2}'`
 		return 0
 	fi
 	echo "Creating service account ${SERVICE_USER}..."

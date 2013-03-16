@@ -298,7 +298,7 @@ This service logs to /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 	read -p "Start the slave service now (yes/no) [yes]? " CONFIRM
 	CONFIRM=${CONFIRM:-"yes"}
 	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-		sudo launchctl load -F org.jenkins-ci.slave.jnlp.plist
+		sudo launchctl load -F /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 		echo
 		read -p "Open Console.app to view logs now (yes/no) [yes]? " CONFIRM
 		CONFIRM=${CONFIRM:-"yes"}

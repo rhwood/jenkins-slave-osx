@@ -325,7 +325,7 @@ You must be an administrator on the system you are installing the Slave on,
 since this installer will add a user to the system and then configure the slave
 as that user.
 
-During the configuration, you will be prompted for nessessary information. The
+During the configuration, you will be prompted for necessary information. The
 suggested or default response will be in brackets [].
 "
 read -p "Continue (yes/no) [yes]? " CONFIRM

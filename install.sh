@@ -187,7 +187,7 @@ not be protected by a password.
 		read -p "Create SSH keys? (yes/no) [yes]" CONFIRM
 		CONFIRM=${CONFIRM:-yes}
 		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N '' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
+			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N \'\' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
 		fi
 		echo "
 You will need to connect to each SSH host as ${SERVICE_USER} to add the host

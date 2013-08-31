@@ -102,7 +102,7 @@ case $COMMAND in
 			if [ $DARWIN_VERSION_MAJOR -ge 12 ]; then
 				KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
 			else
-				KEYSTONE_PASS=$( security 2>&1 find-generic-password -g -a `whoami` -s java_truststore ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g' )
+				KEYSTORE_PASS=$( security 2>&1 find-generic-password -g -a `whoami` -s java_truststore ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g' )
 			fi
 			keytool -import ${CA_CERT} -alias ${ALIAS} -file ${CERTIFICATE} -storepass ${KEYSTORE_PASS}
 		fi

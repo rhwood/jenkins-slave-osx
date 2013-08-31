@@ -326,7 +326,8 @@ You must be an administrator on the system you are installing the Slave on,
 since this installer will add a user to the system and then configure the slave
 as that user.
 
-A Java Development Kit must be installed prior to installing the Jenkins JNLP Slave.
+A Java Development Kit (JDK) must be installed prior to installing the Jenkins
+JNLP Slave.
 
 During the configuration, you will be prompted for necessary information. The
 suggested or default response will be in brackets [].

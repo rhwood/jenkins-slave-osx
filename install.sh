@@ -318,9 +318,9 @@ function check_java {
 	[ java -version 2>/dev/null ] && HAS_JAVA="yes" || HAS_JAVA="no"
 	if [ "${HAS_JAVA}" == "no" ] ; then
 		echo "
-Can not find a Java Runtime Environment (JRE) or Java Development Kit (JDK).
+Can not find a Java Development Kit (JDK).
 
-A JRE or JDK must be installed before installing the Jenkins JNLP Slave.
+A JDK must be installed before installing the Jenkins JNLP Slave.
 "
 		cleanup 1
 	fi

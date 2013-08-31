@@ -314,18 +314,6 @@ function cleanup {
 	exit $1
 }
 
-function check_java {
-	[ java -version 2>/dev/null ] && HAS_JAVA="yes" || HAS_JAVA="no"
-	if [ "${HAS_JAVA}" == "no" ] ; then
-		echo "
-Can not find a Java Development Kit (JDK).
-
-A JDK must be installed before installing the Jenkins JNLP Slave.
-"
-		cleanup 1
-	fi
-}
-
 echo "
         _          _   _              _ _  _ _    ___   ___ _              
      _ | |___ _ _ | |_(_)_ _  ___  _ | | \| | |  | _ \ / __| |__ ___ _____ 
@@ -338,13 +326,14 @@ You must be an administrator on the system you are installing the Slave on,
 since this installer will add a user to the system and then configure the slave
 as that user.
 
+A Java Development Kit must be installed prior to installing the Jenkins JNLP Slave.
+
 During the configuration, you will be prompted for necessary information. The
 suggested or default response will be in brackets [].
 "
 read -p "Continue (yes/no) [yes]? " CONFIRM
 CONFIRM=${CONFIRM:-"yes"}
 if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-	check_java
 	echo
 	echo "Verifying that you may use sudo. You may be prompted for your password"
 	if ! sudo -v ; then

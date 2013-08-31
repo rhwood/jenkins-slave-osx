@@ -19,6 +19,7 @@ OSX_KEYCHAIN="login.keychain"
 OSX_KEYCHAIN_PASS=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
+DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/Lion
 
 function create_user() {
 	# see if user exists
@@ -52,16 +53,16 @@ function install_files() {
 		sudo mkdir ${SERVICE_HOME}
 	fi
 	# download the LaunchDaemon
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --silent --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_HOME}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	sudo install -o root -g wheel -m 644 ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${SERVICE_HOME}/slave.jnlp.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${SERVICE_HOME}/slave.jnlp.sh
 	# download the jenkins JNLP security helper script
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/security.sh -o ${SERVICE_HOME}/security.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_HOME}/security.sh
 	sudo chmod 755 ${SERVICE_HOME}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}
@@ -186,7 +187,7 @@ not be protected by a password.
 		read -p "Create SSH keys? (yes/no) [yes]" CONFIRM
 		CONFIRM=${CONFIRM:-yes}
 		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N '' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
+			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N \'\' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
 		fi
 		echo "
 You will need to connect to each SSH host as ${SERVICE_USER} to add the host
@@ -324,6 +325,9 @@ This script will download, install, and configure a Jenkins JNLP Slave on OS X.
 You must be an administrator on the system you are installing the Slave on,
 since this installer will add a user to the system and then configure the slave
 as that user.
+
+A Java Development Kit (JDK) must be installed prior to installing the Jenkins
+JNLP Slave.
 
 During the configuration, you will be prompted for necessary information. The
 suggested or default response will be in brackets [].

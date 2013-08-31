@@ -314,6 +314,17 @@ function cleanup {
 	exit $1
 }
 
+function check_java {
+	[ java -version 2>/dev/null ] && HAS_JAVA="yes" || HAS_JAVA="no"
+	if [ "${HAS_JAVA}" == "yes" ] ; then
+	echo "
+Can not find a Java Runtime Environment (JRE) or Java Development Kit (JDK).
+
+A JRE or JDK must be installed before installing the Jenkins JNLP Slave.
+"
+	cleanup 1
+}
+
 echo "
         _          _   _              _ _  _ _    ___   ___ _              
      _ | |___ _ _ | |_(_)_ _  ___  _ | | \| | |  | _ \ / __| |__ ___ _____ 
@@ -332,6 +343,7 @@ suggested or default response will be in brackets [].
 read -p "Continue (yes/no) [yes]? " CONFIRM
 CONFIRM=${CONFIRM:-"yes"}
 if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
+	check_java
 	echo
 	echo "Verifying that you may use sudo. You may be prompted for your password"
 	if ! sudo -v ; then

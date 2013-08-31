@@ -316,7 +316,7 @@ function cleanup {
 
 function check_java {
 	[ java -version 2>/dev/null ] && HAS_JAVA="yes" || HAS_JAVA="no"
-	if [ "${HAS_JAVA}" == "yes" ] ; then
+	if [ "${HAS_JAVA}" == "no" ] ; then
 		echo "
 Can not find a Java Runtime Environment (JRE) or Java Development Kit (JDK).
 

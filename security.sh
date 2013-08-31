@@ -17,6 +17,7 @@ CERTIFICATE=""
 ALIAS=""
 COMMAND=""
 CACERT=""
+DARWIN_VERSION_MAJOR=$( uname -r | sed 's|\([^.]\)\..*|\1|g' )
 
 if [ -f ~/Library/Keychains/.keychain_pass ]; then
 	chmod 400 ~/Library/Keychains/.keychain_pass
@@ -84,7 +85,11 @@ case $COMMAND in
 		;;
 	get-password)		
 		if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
-			security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+			if [ $DARWIN_VERSION_MAJOR -ge 12 ]; then
+				security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+			else
+				security 2>&1 find-generic-password -g -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g'
+			fi
 		fi
 		;;
 	add-apple-certificate)
@@ -94,7 +99,11 @@ case $COMMAND in
 		;;
 	add-java-certificate)
 		if [[ ! -z $ALIAS && -f $CERTIFICATE ]]; then
-			KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
+			if [ $DARWIN_VERSION_MAJOR -ge 12 ]; then
+				KEYSTORE_PASS=$( security find-generic-password -w -a `whoami` -s java_truststore ${OSX_KEYCHAIN} )
+			else
+				KEYSTONE_PASS=$( security 2>&1 find-generic-password -g -a `whoami` -s java_truststore ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g' )
+			fi
 			keytool -import ${CA_CERT} -alias ${ALIAS} -file ${CERTIFICATE} -storepass ${KEYSTORE_PASS}
 		fi
 		;;

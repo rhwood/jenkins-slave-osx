@@ -19,6 +19,7 @@ OSX_KEYCHAIN="login.keychain"
 OSX_KEYCHAIN_PASS=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
+DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/Lion
 
 function create_user() {
 	# see if user exists
@@ -52,16 +53,16 @@ function install_files() {
 		sudo mkdir ${SERVICE_HOME}
 	fi
 	# download the LaunchDaemon
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --silent --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_HOME}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
 	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	sudo install -o root -g wheel -m 644 ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/slave.jnlp.sh -o ${SERVICE_HOME}/slave.jnlp.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_HOME}/slave.jnlp.sh
 	sudo chmod 755 ${SERVICE_HOME}/slave.jnlp.sh
 	# download the jenkins JNLP security helper script
-	sudo curl --silent --url https://raw.github.com/rhwood/jenkins-slave-osx/master/security.sh -o ${SERVICE_HOME}/security.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_HOME}/security.sh
 	sudo chmod 755 ${SERVICE_HOME}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}

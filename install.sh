@@ -19,7 +19,7 @@ OSX_KEYCHAIN="login.keychain"
 OSX_KEYCHAIN_PASS=""
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
-DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/Lion
+DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/master
 
 function create_user() {
 	# see if user exists

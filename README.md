@@ -11,10 +11,10 @@ Scripts to create and run a [Jenkins](http://jenkins-ci.org) slave via [Jave Web
 
 ## Features
 OS X slaves created with this script:
-* Starts on system boot
-* Runs as an independent user
-* Uses a Java Truststore for self-signed certificates (so your Jenkins master can use a self-signed certificate, and you do not have to instruct the slave to trust all certificates regardless of source)
-* Uses the OS X Keychain for secrets
+* Start on system boot
+* Run as an independent user
+* Use an independent Java Truststore for self-signed certificates (so your Jenkins master can use a self-signed certificate, and you do not have to instruct the slave to trust all certificates regardless of source)
+* Use an independent OS X Keychain for secrets
 
 
 
@@ -36,10 +36,13 @@ Simply rerun the installer. It will reinstall the scripts, but use existing conf
 
 
 ## Configuration
-The following file in ``/var/lib/jenkins`` (assuming you installed this service in the default location) can be used to configure this service:
-``Library/Preferences/org.jenkins-ci.slave.jnlp.conf``
-
-
+The file ``Library/Preferences/org.jenkins-ci.slave.jnlp.conf`` in ``/var/lib/jenkins`` (assuming an installation in the default location) can be used to configure this service with these options:
+* `JAVA_ARGS` specifies any optional java arguments to be passed to the slave. This may be left blank.
+* `JENKINS_SLAVE` specifies the node name for the slave. This is required.
+* `JENKINS_MASTER` specifies the URL for the Jenkins master. This is required.
+* `JENKINS_USER` specifies the Jenkins user used to bind the master to the slave. This is required.
+* `HTTP_PORT` specifies the nonstandard port used to communicate with the Jenkins master. This may be left blank for port 80 (http) or 443 (https).
+These settings are initially set by the installation script, and only need to be changed if that script is invalidated. The slave must be restarted for changes to take effect.
 
 ## Adding Server Certificates
 If you decide to secure the Jenkins master, or need to add additional certificates for the slave to trust the Jenkins master, you only need (assuming your service account is "jenkins", and your CA is StartSSL.com) from a command line:

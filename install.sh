@@ -137,7 +137,7 @@ function configure_daemon {
 	echo "${MASTER_USER}'s API token is required to authenticate a JNLP slave."
 	echo "The API token is listed at ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER}/configure"
 	read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
-	while ! curl --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --silent --head --fail --output /dev/null ; do
+	while ! curl -k --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --silent --head --fail --output /dev/null ; do
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done

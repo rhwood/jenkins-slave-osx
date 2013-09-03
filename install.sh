@@ -9,8 +9,8 @@ set -u
 SERVICE_USER=${SERVICE_USER:-"jenkins"}
 SERVICE_HOME=${SERVICE_HOME:-"/var/lib/${SERVICE_USER}"}
 SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
-MASTER_NAME=""							# set default to jenkins later
-MASTER_USER=""							# set default to `whoami` later
+MASTER_NAME=""					# set default to jenkins later
+MASTER_USER=""					# set default to `whoami` later
 MASTER=""
 MASTER_HTTP_PORT=""
 SLAVE_NODE=""
@@ -290,9 +290,9 @@ function start_daemon {
 The Jenkins JNLP Slave service is installed
 
 This service can be started using the command
-	sudo launchctl load org.jenkins-ci.slave.jnlp.plist
+    sudo launchctl load /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 and stopped using the command
-	sudo launchctl unload org.jenkins-ci.slave.jnlp.plist
+    sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 
 This service logs to /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 "

@@ -47,7 +47,7 @@ echo
 echo "Getting slave.jar from ${JENKINS_MASTER}"
 RESULT=-1
 while [ true ]; do
-	curl --url ${JENKINS_MASTER}${HTTP_PORT}/jnlpJars/slave.jar -o ${JENKINS_HOME}/slave.jar
+	curl --url ${JENKINS_MASTER}${HTTP_PORT}/jnlpJars/slave.jar --insecure --output ${JENKINS_HOME}/slave.jar
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then
 		break

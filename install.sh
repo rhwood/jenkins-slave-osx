@@ -106,7 +106,7 @@ function configure_daemon {
 		read -p "URL for Jenkins master [$MASTER]: " RESPONSE
 		MASTER=${RESPONSE:-$MASTER}
 	fi
-	while ! curl -k --location --url ${MASTER}/jnlpJars/slave.jar --silent --fail --output ${INSTALL_TMP}/slave.jar ; do
+	while ! curl --url ${MASTER}/jnlpJars/slave.jar --insecure --location --silent --fail --output ${INSTALL_TMP}/slave.jar ; do
 		echo "Unable to connect to Jenkins at ${MASTER}"
 		read -p "URL for Jenkins master: " MASTER
 	done
@@ -137,7 +137,7 @@ function configure_daemon {
 	echo "${MASTER_USER}'s API token is required to authenticate a JNLP slave."
 	echo "The API token is listed at ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER}/configure"
 	read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
-	while ! curl -k --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --silent --head --fail --output /dev/null ; do
+	while ! curl --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --insecure --silent --head --fail --output /dev/null ; do
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done

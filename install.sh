@@ -268,18 +268,24 @@ ${SLAVE_NODE} to connect to ${MASTER_NAME}.
 }
 
 function write_config {
+	# ensure JAVA_ARGS specifies a setting for java.awt.headless (default to true)
+	[[ "$JAVA_ARGS" =~ -Djava.awt.headless= ]] || JAVA_ARGS="${JAVA_ARGS} -Djava.awt.headless=true"
+	# create config directory
 	sudo mkdir -p `dirname ${SERVICE_CONF}`
 	sudo chmod 777 `dirname ${SERVICE_CONF}`
+	# make the config file writable
 	if [ -f ${SERVICE_CONF} ]; then
 		sudo chmod 666 ${SERVICE_CONF}
 	fi
+	# write the config file
 	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
 	:> ${SERVICE_CONF}
 	echo "JENKINS_SLAVE=${SLAVE_NODE}" >> ${SERVICE_CONF}
 	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
 	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
-	echo "JAVA_ARGS=${JAVA_ARGS}" >> ${SERVICE_CONF}
+	echo "JAVA_ARGS=\"${JAVA_ARGS}\"" >> ${SERVICE_CONF}
+	# secure the config file
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}
 	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}

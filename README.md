@@ -43,6 +43,15 @@ The file ``Library/Preferences/org.jenkins-ci.slave.jnlp.conf`` in ``/var/lib/je
 * `HTTP_PORT` specifies the nonstandard port used to communicate with the Jenkins master. This may be left blank for port 80 (http) or 443 (https).
 These settings are initially set by the installation script, and only need to be changed if that script is invalidated. The slave must be restarted for changes to take effect.
 
+## Adding Developer Certificates
+Building application targets for iOS requires that your iPhone Developer certificates be available to the Jenkins slave.
+
+1. Export the Certificate and Key from Keychain for your developer profiles.
+2. `sudo cp /path/to/exported-keys-and-certificates /var/lib/jenkins`
+3. For each certificate and key:
+   `sudo -i -u jenkins /var/lib/jenkins/security.sh add-apple-certificate --certificate=/var/lib/jenkins/name-of-exported-cert`
+4. Delete the exported certificate file if is not password protected.
+
 ## Adding Server Certificates
 If you decide to secure the Jenkins master, or need to add additional certificates for the slave to trust the Jenkins master, you only need (assuming your service account is "jenkins", and your CA is StartSSL.com) from a command line:
 

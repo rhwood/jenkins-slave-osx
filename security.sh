@@ -39,7 +39,7 @@ while [ $# -gt 0 ]; do
 			ACCOUNT=${1#*=}
 			;;
 		--service=*)
-			SERVICE=${1#*=}
+			SERVICE="${1#*=}"
 			;;
 		--password=*)
 			PASSWORD=${1#*=}
@@ -81,19 +81,19 @@ case $COMMAND in
 	set-password)
 		if [[ ! -z $ACCOUNT && ! -z $SERVICE && ! -z $PASSWORD ]]; then
 			if [ $DARWIN_VERSION_MAJOR -ne 10 ]; then
-				security add-generic-password -U -w ${PASSWORD} -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+				security add-generic-password -U -w ${PASSWORD} -a ${ACCOUNT} -s "${SERVICE}" ${OSX_KEYCHAIN}
 			else
-				security 2>/dev/null delete-generic-password -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN} >/dev/null
-				security add-generic-password -w ${PASSWORD} -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+				security 2>/dev/null delete-generic-password -a ${ACCOUNT} -s "${SERVICE}" ${OSX_KEYCHAIN} >/dev/null
+				security add-generic-password -w ${PASSWORD} -a ${ACCOUNT} -s "${SERVICE}" ${OSX_KEYCHAIN}
 			fi
 		fi
 		;;
 	get-password)		
 		if [[ ! -z $ACCOUNT && ! -z $SERVICE ]]; then
 			if [ $DARWIN_VERSION_MAJOR -ge 12 ]; then
-				security find-generic-password -w -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN}
+				security find-generic-password -w -a ${ACCOUNT} -s "${SERVICE}" ${OSX_KEYCHAIN}
 			else
-				security 2>&1 find-generic-password -g -a ${ACCOUNT} -s ${SERVICE} ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g'
+				security 2>&1 find-generic-password -g -a ${ACCOUNT} -s "${SERVICE}" ${OSX_KEYCHAIN} | grep ^password | sed 's|^password: "\(.*\)"$|\1|g'
 			fi
 		fi
 		;;

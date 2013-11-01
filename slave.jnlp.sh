@@ -35,7 +35,8 @@ if [ -f ${JENKINS_CONF} ]; then
 fi
 
 [ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
-JENKINS_JNLP_URL=${JENKINS_MASTER}${HTTP_PORT}/computer/${JENKINS_SLAVE}/slave-agent.jnlp
+JENKINS_SLAVE_ESC=$( echo -ne "${JENKINS_SLAVE}" | curl -Gso /dev/null -w %{url_effective} --data-urlencode @- "" | cut -c 3- )
+JENKINS_JNLP_URL=${JENKINS_MASTER}${HTTP_PORT}/computer/${JENKINS_SLAVE_ESC}/slave-agent.jnlp
 
 echo
 echo "Starting at `date`"
@@ -68,7 +69,7 @@ if [[ -f $JAVA_TRUSTSTORE ]]; then
 fi
 # The user and API token are required for Jenkins >= 1.498
 if [ ! -z ${JENKINS_USER} ]; then
-	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service=${JENKINS_SLAVE} )
+	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service="${JENKINS_SLAVE}" )
 	JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 fi
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"

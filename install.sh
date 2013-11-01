@@ -78,7 +78,7 @@ function process_args {
 		sudo chmod 666 ${SERVICE_CONF}
 		source ${SERVICE_CONF}
 		sudo chmod 400 ${SERVICE_CONF}
-		SLAVE_NODE=${SLAVE_NODE:-$JENKINS_SLAVE}
+		SLAVE_NODE="${SLAVE_NODE:-$JENKINS_SLAVE}"
 		MASTER=${MASTER:-$JENKINS_MASTER}
 		MASTER_HTTP_PORT=${HTTP_PORT}
 		MASTER_USER=${MASTER_USER:-$JENKINS_USER}
@@ -90,10 +90,10 @@ function process_args {
 	fi
 	while [ $# -gt 0 ]; do
 		case $1 in
-			--node=*) SLAVE_NODE=${1#*=} ;;
+			--node=*) SLAVE_NODE="${1#*=}" ;;
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
-			--java-args=*) JAVA_ARGS=${1#*=} ;;
+			--java-args=*) JAVA_ARGS="${1#*=}" ;;
 		esac
 		shift
 	done
@@ -121,11 +121,11 @@ function configure_daemon {
 		[ -z $MASTER_HTTP_PORT ] || MASTER="${PROTOCOL}:`echo $MASTER | cut -d':' -f2`"
 	fi
 	[ ! -z $MASTER_HTTP_PORT ] && MASTER_HTTP_PORT=":${MASTER_HTTP_PORT}"
-	if [ -z $SLAVE_NODE ]; then
+	if [ -z "$SLAVE_NODE" ]; then
 		SLAVE_NODE=${SLAVE_NODE:-`hostname -s | tr '[:upper:]' '[:lower:]'`}
 		echo
 		read -p "Name of this slave on ${MASTER_NAME} [$SLAVE_NODE]: " RESPONSE
-		SLAVE_NODE=${RESPONSE:-$SLAVE_NODE}
+		SLAVE_NODE="${RESPONSE:-$SLAVE_NODE}"
 	fi
 	if [ -z $MASTER_USER ]; then
 		[ "${SERVICE_USER}" != "jenkins" ] && MASTER_USER=${SERVICE_USER} || MASTER_USER=`whoami`
@@ -143,7 +143,7 @@ function configure_daemon {
 	done
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	create_keychain
-	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=${SLAVE_NODE}
+	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"`rawurlencode "${SLAVE_NODE}"`\"
 	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
 	KEYSTORE_PASS=${KEYSTORE_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
@@ -187,7 +187,7 @@ not be protected by a password.
 		read -p "Create SSH keys? (yes/no) [yes]" CONFIRM
 		CONFIRM=${CONFIRM:-yes}
 		if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N \'\' -f ${SERVICE_HOME}/.ssh/id_rsa -C "${SERVICE_USER}@${SLAVE_NODE}"
+			sudo -i -u ${SERVICE_USER} ssh-keygen -t rsa -N \'\' -f ${SERVICE_HOME}/.ssh/id_rsa -C \"${SERVICE_USER}@${SLAVE_NODE}\"
 		fi
 		echo "
 You will need to connect to each SSH host as ${SERVICE_USER} to add the host
@@ -280,7 +280,7 @@ function write_config {
 	# write the config file
 	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
 	:> ${SERVICE_CONF}
-	echo "JENKINS_SLAVE=${SLAVE_NODE}" >> ${SERVICE_CONF}
+	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" >> ${SERVICE_CONF}
 	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
 	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
@@ -318,6 +318,24 @@ This service logs to /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 function cleanup {
 	rm -rf ${INSTALL_TMP}
 	exit $1
+}
+
+function rawurlencode() {
+	# see http://stackoverflow.com/a/10660730/176160
+	local string="${1}"
+	local strlen=${#string}
+	local encoded=""
+
+	for (( pos=0 ; pos<strlen ; pos++ )); do
+		c=${string:$pos:1}
+		case "$c" in
+			[-_.~a-zA-Z0-9] ) o="${c}" ;;
+			* )               printf -v o '%%%02x' "'$c"
+		esac
+		encoded+="${o}"
+	done
+	echo "${encoded}"    # You can either set a return variable (FASTER) 
+	REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
 }
 
 echo "

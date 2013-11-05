@@ -281,12 +281,12 @@ function write_config {
 	fi
 	# write the config file
 	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
-	:> ${SERVICE_CONF}
-	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" >> ${SERVICE_CONF}
-	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
-	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
-	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
-	echo "JAVA_ARGS=\"${JAVA_ARGS}\"" >> ${SERVICE_CONF}
+	sudo rm ${SERVICE_CONF}
+	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" | sudo tee -a ${SERVICE_CONF} >/dev/null
+	echo "JENKINS_MASTER=${MASTER}" | sudo tee -a ${SERVICE_CONF} >/dev/null
+	echo "HTTP_PORT=${MASTER_HTTP_PORT}" | sudo tee -a ${SERVICE_CONF} >/dev/null
+	echo "JENKINS_USER=${MASTER_USER}" | sudo tee -a ${SERVICE_CONF} >/dev/null
+	echo "JAVA_ARGS=\"${JAVA_ARGS}\"" | sudo tee -a ${SERVICE_CONF} >/dev/null
 	# secure the config file
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}

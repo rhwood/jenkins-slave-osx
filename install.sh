@@ -7,8 +7,6 @@
 set -u
 
 SERVICE_USER=${SERVICE_USER:-"jenkins"}
-SERVICE_HOME=${SERVICE_HOME:-"/var/lib/${SERVICE_USER}"}
-SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 MASTER_NAME=""					# set default to jenkins later
 MASTER_USER=""					# set default to `whoami` later
 MASTER=""
@@ -26,8 +24,12 @@ function create_user() {
 	if dscl /Local/Default list /Users | grep -q ${SERVICE_USER} ; then
 		echo "Using pre-existing service account ${SERVICE_USER}"
 		SERVICE_HOME=`dscl /Local/Default read /Users/${SERVICE_USER} NFSHomeDirectory | awk '{print $2}'`
+		SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 		return 0
 	fi
+	SERVICE_HOME=${SERVICE_HOME:-"/var/lib/${SERVICE_USER}"}
+	SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
+	
 	echo "Creating service account ${SERVICE_USER}..."
 	# create jenkins group
 	NEXT_GID=$((`dscl /Local/Default list /Groups gid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))

@@ -22,29 +22,31 @@ INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/master
 
 function create_user() {
-	# see if user exists
 	if dscl /Local/Default list /Users | grep -q ${SERVICE_USER} ; then
 		echo "Using pre-existing service account ${SERVICE_USER}"
-		SERVICE_HOME=`dscl /Local/Default read /Users/${SERVICE_USER} NFSHomeDirectory | awk '{print $2}'`
-		return 0
+	else
+		echo "Creating service account ${SERVICE_USER}..."
+		NEXT_UID=$((`dscl /Local/Default list /Users uid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
+		sudo dscl /Local/Default create /Users/${SERVICE_USER}
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} UniqueID $NEXT_UID
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} PrimaryGroupID $NEXT_GID
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} UserShell /bin/bash
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} NFSHomeDirectory ${SERVICE_HOME}
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} Password \*
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} RealName 'Jenkins Node Service'
 	fi
-	echo "Creating service account ${SERVICE_USER}..."
-	# create jenkins group
-	NEXT_GID=$((`dscl /Local/Default list /Groups gid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER}
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} PrimaryGroupID $NEXT_GID
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} Password \*
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} RealName 'Jenkins Node Service'
-	# create jenkins user
-	NEXT_UID=$((`dscl /Local/Default list /Users uid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
-	sudo dscl /Local/Default create /Users/${SERVICE_USER}
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} UniqueID $NEXT_UID
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} PrimaryGroupID $NEXT_GID
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} UserShell /bin/bash
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} NFSHomeDirectory ${SERVICE_HOME}
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} Password \*
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} RealName 'Jenkins Node Service'
+	if dscl /Local/Default list /Groups | grep -q ${SERVICE_USER} ; then
+		echo "Using pre-existing service group ${SERVICE_USER}"
+	else
+		echo "Creating service group ${SERVICE_USER}..."	
+		NEXT_GID=$((`dscl /Local/Default list /Groups gid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
+		sudo dscl /Local/Default create /Groups/${SERVICE_USER}
+		sudo dscl /Local/Default create /Groups/${SERVICE_USER} PrimaryGroupID $NEXT_GID
+		sudo dscl /Local/Default create /Groups/${SERVICE_USER} Password \*
+		sudo dscl /Local/Default create /Groups/${SERVICE_USER} RealName 'Jenkins Node Service'
+	fi
 	sudo dseditgroup -o edit -a ${SERVICE_USER} -t user ${SERVICE_USER}
+	SERVICE_HOME=`dscl /Local/Default read /Users/${SERVICE_USER} NFSHomeDirectory | awk '{print $2}'`
 }
 
 function install_files() {

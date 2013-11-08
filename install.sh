@@ -7,10 +7,11 @@
 set -u
 
 SERVICE_USER=${SERVICE_USER:-"jenkins"}
+SERVICE_GROUP=${SERVICE_GROUP:-"${SERVICE_USER}"}
 SERVICE_HOME=${SERVICE_HOME:-"/var/lib/${SERVICE_USER}"}
-SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
-MASTER_NAME=""					# set default to jenkins later
-MASTER_USER=""					# set default to `whoami` later
+SERVICE_CONF="" # set in create_user function
+MASTER_NAME=""	# set default to jenkins later
+MASTER_USER=""	# set default to `whoami` later
 MASTER=""
 MASTER_HTTP_PORT=""
 SLAVE_NODE=""
@@ -25,26 +26,32 @@ function create_user() {
 	# see if user exists
 	if dscl /Local/Default list /Users | grep -q ${SERVICE_USER} ; then
 		echo "Using pre-existing service account ${SERVICE_USER}"
-		SERVICE_HOME=`dscl /Local/Default read /Users/${SERVICE_USER} NFSHomeDirectory | awk '{print $2}'`
-		return 0
+		SERVICE_HOME=$( dscl /Local/Default read /Users/${SERVICE_USER} NFSHomeDirectory | awk '{ print $2 }' )
+		SERVICE_GROUP=$( dscl /Local/Default search /Groups gid $( dscl /Local/Default read /Users/${SERVICE_USER} PrimaryGroupID | awk '{ print $2 }' ) | head -n1 | awk '{ print $1 }' )
+	else
+		echo "Creating service account ${SERVICE_USER}..."
+		if dscl /Local/Default list /Groups | grep -q ${SERVICE_GROUP} ; then
+			NEXT_GID=$( dscl /Local/Default list /Groups gid | grep ${SERVICE_GROUP} | awk '{ print $2 }' )
+		else
+			# create jenkins group
+			NEXT_GID=$((`dscl /Local/Default list /Groups gid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
+			sudo dscl /Local/Default create /Groups/${SERVICE_GROUP}
+			sudo dscl /Local/Default create /Groups/${SERVICE_GROUP} PrimaryGroupID $NEXT_GID
+			sudo dscl /Local/Default create /Groups/${SERVICE_GROUP} Password \*
+			sudo dscl /Local/Default create /Groups/${SERVICE_GROUP} RealName 'Jenkins Node Service'
+		fi
+		# create jenkins user
+		NEXT_UID=$((`dscl /Local/Default list /Users uid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
+		sudo dscl /Local/Default create /Users/${SERVICE_USER}
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} UniqueID $NEXT_UID
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} PrimaryGroupID $NEXT_GID
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} UserShell /bin/bash
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} NFSHomeDirectory ${SERVICE_HOME}
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} Password \*
+		sudo dscl /Local/Default create /Users/${SERVICE_USER} RealName 'Jenkins Node Service'
+		sudo dseditgroup -o edit -a ${SERVICE_USER} -t user ${SERVICE_USER}
 	fi
-	echo "Creating service account ${SERVICE_USER}..."
-	# create jenkins group
-	NEXT_GID=$((`dscl /Local/Default list /Groups gid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER}
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} PrimaryGroupID $NEXT_GID
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} Password \*
-	sudo dscl /Local/Default create /Groups/${SERVICE_USER} RealName 'Jenkins Node Service'
-	# create jenkins user
-	NEXT_UID=$((`dscl /Local/Default list /Users uid | awk '{ print $2 }' | sort -n | grep -v ^[5-9] | tail -n1` + 1))
-	sudo dscl /Local/Default create /Users/${SERVICE_USER}
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} UniqueID $NEXT_UID
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} PrimaryGroupID $NEXT_GID
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} UserShell /bin/bash
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} NFSHomeDirectory ${SERVICE_HOME}
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} Password \*
-	sudo dscl /Local/Default create /Users/${SERVICE_USER} RealName 'Jenkins Node Service'
-	sudo dseditgroup -o edit -a ${SERVICE_USER} -t user ${SERVICE_USER}
+	SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
 }
 
 function install_files() {
@@ -65,7 +72,7 @@ function install_files() {
 	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_HOME}/security.sh
 	sudo chmod 755 ${SERVICE_HOME}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
-	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}
+	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${SERVICE_HOME}
 	# create a logging space
 	if [ ! -d /var/log/${SERVICE_USER} ] ; then
 		sudo mkdir /var/log/${SERVICE_USER}
@@ -243,7 +250,7 @@ function create_keychain {
 	local KEYCHAINS=${SERVICE_HOME}/Library/Keychains
 	if [ ! -d ${KEYCHAINS} ]; then
 		sudo mkdir -p ${KEYCHAINS}
-		sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${KEYCHAINS}
+		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS}
 	fi
 	if [ ! -f ${KEYCHAINS}/${OSX_KEYCHAIN} ]; then
 		sudo -i -u ${SERVICE_USER} security create-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
@@ -252,7 +259,7 @@ function create_keychain {
 		fi
 		sudo chmod 777 ${KEYCHAINS}
 		sudo echo "OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}" > ${KEYCHAINS}/.keychain_pass
-		sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${KEYCHAINS} 
+		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
 		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
 		sudo chmod 755 ${KEYCHAINS}
 	fi
@@ -288,7 +295,7 @@ function write_config {
 	# secure the config file
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}
-	sudo chown -R ${SERVICE_USER}:${SERVICE_USER} ${SERVICE_HOME}
+	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${SERVICE_HOME}
 }
 
 function start_daemon {

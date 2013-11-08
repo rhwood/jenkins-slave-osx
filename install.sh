@@ -286,12 +286,14 @@ function write_config {
 	fi
 	# write the config file
 	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
-	:> ${SERVICE_CONF}
-	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" >> ${SERVICE_CONF}
-	echo "JENKINS_MASTER=${MASTER}" >> ${SERVICE_CONF}
-	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${SERVICE_CONF}
-	echo "JENKINS_USER=${MASTER_USER}" >> ${SERVICE_CONF}
-	echo "JAVA_ARGS=\"${JAVA_ARGS}\"" >> ${SERVICE_CONF}
+	CONF_TMP=${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.conf
+	:> ${CONF_TMP}
+	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" >> ${CONF_TMP}
+	echo "JENKINS_MASTER=${MASTER}" >> ${CONF_TMP}
+	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${CONF_TMP}
+	echo "JENKINS_USER=${MASTER_USER}" >> ${CONF_TMP}
+	echo "JAVA_ARGS=\"${JAVA_ARGS}\"" >> ${CONF_TMP}
+	sudo mv ${CONF_TMP} ${SERVICE_CONF}
 	# secure the config file
 	sudo chmod 755 `dirname ${SERVICE_CONF}`
 	sudo chmod 644 ${SERVICE_CONF}

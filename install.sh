@@ -101,6 +101,8 @@ function process_args {
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
 			--java-args=*) JAVA_ARGS="${1#*=}" ;;
+			--keychain-password=*) KEYCHAIN_PASSWORD="${1#*=}" ;;
+			--keychain-password) KEYCHAIN_PASSWORD="" ;;
 		esac
 		shift
 	done
@@ -148,7 +150,18 @@ function configure_daemon {
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
-	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
+	
+	# see http://stackoverflow.com/a/9824943/14731
+	if [ -n "${KEYCHAIN_PASSWORD-}" ]; then
+		# $KEYCHAIN_PASSWORD set, not empty
+		OSX_KEYCHAIN_PASS = ${KEYCHAIN_PASSWORD}
+	elif [ "${KEYCHAIN_PASSWORD+DEFINED_BUT_EMPTY}" = "DEFINED_BUT_EMPTY" ]; then
+		# $KEYCHAIN_PASSWORD set, but empty
+		read -p "Keychain password: " OSX_KEYCHAIN_PASS
+	else
+		# $KEYCHAIN_PASSWORD not set
+		OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
+	fi
 	create_keychain
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"`rawurlencode "${SLAVE_NODE}"`\"
 	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`

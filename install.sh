@@ -154,7 +154,7 @@ function configure_daemon {
 	# see http://stackoverflow.com/a/9824943/14731
 	if [ -n "${KEYCHAIN_PASSWORD-}" ]; then
 		# $KEYCHAIN_PASSWORD set, not empty
-		OSX_KEYCHAIN_PASS = ${KEYCHAIN_PASSWORD}
+		OSX_KEYCHAIN_PASS=${KEYCHAIN_PASSWORD}
 	elif [ "${KEYCHAIN_PASSWORD+DEFINED_BUT_EMPTY}" = "DEFINED_BUT_EMPTY" ]; then
 		# $KEYCHAIN_PASSWORD set, but empty
 		read -p "Keychain password: " OSX_KEYCHAIN_PASS

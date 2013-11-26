@@ -288,7 +288,7 @@ function write_config {
 	[[ "$MASTER_HTTP_PORT" =~ ^: ]] && MASTER_HTTP_PORT=${MASTER_HTTP_PORT#":"}
 	local CONF_TMP=${INSTALL_TMP}/org.jenkins-ci.slave.jnlp.conf
 	:> ${CONF_TMP}
-	echo "JENKINS_SLAVE=\"`rawurlencode "${SLAVE_NODE}"`\"" >> ${CONF_TMP}
+	echo "JENKINS_SLAVE=\"${SLAVE_NODE}\"" >> ${CONF_TMP}
 	echo "JENKINS_MASTER=${MASTER}" >> ${CONF_TMP}
 	echo "HTTP_PORT=${MASTER_HTTP_PORT}" >> ${CONF_TMP}
 	echo "JENKINS_USER=${MASTER_USER}" >> ${CONF_TMP}

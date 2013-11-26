@@ -375,7 +375,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 		cleanup 1
 	fi
 	create_user
-	process_args $@
+	process_args "$@"
 	echo "Installing files..."
 	install_files
 	echo "Configuring daemon..."

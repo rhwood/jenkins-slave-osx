@@ -74,6 +74,10 @@ fi
 # The user and API token are required for Jenkins >= 1.498
 if [ ! -z ${JENKINS_USER} ]; then
 	JENKINS_TOKEN=$( ${JENKINS_HOME}/security.sh get-password --account=${JENKINS_USER} --service="${JENKINS_SLAVE}" )
+	if [ -z "${JENKINS_TOKEN}" ]; then
+		echo "Unable to get JENKINS_TOKEN"
+		unload
+	fi
 	JENKINS_USER="-jnlpCredentials ${JENKINS_USER}:"
 fi
 echo "Calling java ${JAVA_ARGS_LOG} -jar ${JENKINS_HOME}/slave.jar -jnlpUrl ${JENKINS_JNLP_URL} ${JENKINS_USER}********"

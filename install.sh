@@ -15,9 +15,9 @@ MASTER_USER=""	# set default to `whoami` later
 MASTER=""
 MASTER_HTTP_PORT=""
 SLAVE_NODE=""
-SLAVE_TOKEN=""
+SLAVE_TOKEN=${SLAVE_TOKEN:-""}
 OSX_KEYCHAIN="login.keychain"
-OSX_KEYCHAIN_PASS=""
+OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-""}
 JAVA_ARGS=${JAVA_ARGS:-""}
 INSTALL_TMP=`mktemp -d -q -t org.jenkins-ci.slave.jnlp`
 DOWNLOADS_PATH=https://raw.github.com/rhwood/jenkins-slave-osx/master
@@ -101,8 +101,6 @@ function process_args {
 			--user=*) MASTER_USER=${1#*=} ;;
 			--master=*) MASTER=${1#*=} ;;
 			--java-args=*) JAVA_ARGS="${1#*=}" ;;
-			--keychain-password=*) KEYCHAIN_PASSWORD="${1#*=}" ;;
-			--keychain-password) KEYCHAIN_PASSWORD="" ;;
 		esac
 		shift
 	done
@@ -145,23 +143,14 @@ function configure_daemon {
 	echo
 	echo "${MASTER_USER}'s API token is required to authenticate a JNLP slave."
 	echo "The API token is listed at ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER}/configure"
-	read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
+	if [ -z "${SLAVE_TOKEN}" ]; then
+		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
+	fi
 	while ! curl --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --insecure --silent --head --fail --output /dev/null ; do
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
 	
-	# see http://stackoverflow.com/a/9824943/14731
-	if [ -n "${KEYCHAIN_PASSWORD-}" ]; then
-		# $KEYCHAIN_PASSWORD set, not empty
-		OSX_KEYCHAIN_PASS=${KEYCHAIN_PASSWORD}
-	elif [ "${KEYCHAIN_PASSWORD+DEFINED_BUT_EMPTY}" = "DEFINED_BUT_EMPTY" ]; then
-		# $KEYCHAIN_PASSWORD set, but empty
-		read -p "Keychain password: " OSX_KEYCHAIN_PASS
-	else
-		# $KEYCHAIN_PASSWORD not set
-		OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
-	fi
 	create_keychain
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"`rawurlencode "${SLAVE_NODE}"`\"
 	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
@@ -265,17 +254,23 @@ function create_keychain {
 		sudo mkdir -p ${KEYCHAINS}
 		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS}
 	fi
-	if [ ! -f ${KEYCHAINS}/${OSX_KEYCHAIN} ]; then
+	if sudo test ! -f ${KEYCHAINS}/${OSX_KEYCHAIN}; then
+		OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 		sudo -i -u ${SERVICE_USER} security create-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
-		if [ -f ${KEYCHAINS}/.keychain_pass ]; then
-			sudo chmod 666 ${KEYCHAINS}/.keychain_pass
+	else
+		# Existing keychain
+		if [ -z "${OSX_KEYCHAIN_PASS}" ]; then
+			read -p "Keychain password: " OSX_KEYCHAIN_PASS
 		fi
-		sudo chmod 777 ${KEYCHAINS}
-		sudo sh -c "echo 'OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}' > ${KEYCHAINS}/.keychain_pass"
-		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
-		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
-		sudo chmod 755 ${KEYCHAINS}
 	fi
+	if [ -f ${KEYCHAINS}/.keychain_pass ]; then
+		sudo chmod 666 ${KEYCHAINS}/.keychain_pass
+	fi
+	sudo chmod 777 ${KEYCHAINS}
+	sudo sh -c "echo 'OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}' > ${KEYCHAINS}/.keychain_pass"
+	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
+	sudo chmod 400 ${KEYCHAINS}/.keychain_pass
+	sudo chmod 755 ${KEYCHAINS}
 	echo "
 The OS X Keychain password for ${SERVICE_USER} is ${OSX_KEYCHAIN_PASS}
 You will need to copy this into the Jenkins configuration on ${MASTER_NAME}

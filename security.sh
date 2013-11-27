@@ -114,9 +114,11 @@ case $COMMAND in
 		fi
 		;;
 	lock)
+		security lock-keychain ${OSX_KEYCHAIN}
 		rm ${OSX_KEYCHAIN_LOCK}
 		;;
 	unlock)
+		security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
 		touch ${OSX_KEYCHAIN_LOCK}
 		;;
 esac

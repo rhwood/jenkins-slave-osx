@@ -59,6 +59,10 @@ done
 
 echo "Launching slave process at ${JENKINS_JNLP_URL}"
 RESULT=-1
+
+# WORKAROUND: https://github.com/rhwood/jenkins-slave-osx/issues/19#issuecomment-29364484
+${JENKINS_HOME}/security.sh unlock
+
 # If we use a trustStore for the Jenkins Master certificates, we need to pass it
 # and its password to the java process that runs the slave. The password is stored
 # in the OS X Keychain that we use for other purposes.

@@ -150,6 +150,7 @@ function configure_daemon {
 	done
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	create_keychain
+	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh unlock
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"${SLAVE_NODE}\"
 	
 	# Reuse the password if the entry exists, otherwise generate a new password.

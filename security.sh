@@ -74,9 +74,10 @@ if [ "$COMMAND" == "show-password" ]; then
 	exit 0
 fi
 
-if [ "$COMMAND" != "lock" ]; then
-	security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
-fi
+# WORKAROUND: https://github.com/rhwood/jenkins-slave-osx/issues/19#issuecomment-29364484
+#if [ "$COMMAND" != "lock" ]; then
+#	security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
+#fi
 case $COMMAND in
 	set-password)
 		if [[ ! -z $ACCOUNT && ! -z $SERVICE && ! -z $PASSWORD ]]; then
@@ -119,6 +120,7 @@ case $COMMAND in
 		touch ${OSX_KEYCHAIN_LOCK}
 		;;
 esac
-if [[ "$COMMAND" != "unlock" || ! -f ${OSX_KEYCHAIN_LOCK} ]]; then
-	security lock-keychain ${OSX_KEYCHAIN}
-fi
+# WORKAROUND: https://github.com/rhwood/jenkins-slave-osx/issues/19#issuecomment-29364484
+#if [[ "$COMMAND" != "unlock" || ! -f ${OSX_KEYCHAIN_LOCK} ]]; then
+#	security lock-keychain ${OSX_KEYCHAIN}
+#fi

@@ -151,7 +151,10 @@ function configure_daemon {
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	create_keychain
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"${SLAVE_NODE}\"
-	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
+	
+	# Reuse the password if the entry exists, otherwise generate a new password.
+	# 2>/dev/null suppresses an error if the entry does not exist.
+	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore 2>/dev/null`
 	KEYSTORE_PASS=${KEYSTORE_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 	if [ "$PROTOCOL" == "https" ]; then
@@ -252,17 +255,17 @@ function create_keychain {
 		sudo mkdir -p ${KEYCHAINS}
 		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS}
 	fi
-	if [ ! -f ${KEYCHAINS}/${OSX_KEYCHAIN} ]; then
+	if sudo test ! -f ${KEYCHAINS}/${OSX_KEYCHAIN}; then
 		sudo -i -u ${SERVICE_USER} security create-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
-		if [ -f ${KEYCHAINS}/.keychain_pass ]; then
-			sudo chmod 666 ${KEYCHAINS}/.keychain_pass
-		fi
-		sudo chmod 777 ${KEYCHAINS}
-		sudo sh -c "echo 'OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}' > ${KEYCHAINS}/.keychain_pass"
-		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
-		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
-		sudo chmod 755 ${KEYCHAINS}
 	fi
+	if [ -f ${KEYCHAINS}/.keychain_pass ]; then
+		sudo chmod 666 ${KEYCHAINS}/.keychain_pass
+	fi
+	sudo chmod 777 ${KEYCHAINS}
+	sudo sh -c "echo 'OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}' > ${KEYCHAINS}/.keychain_pass"
+	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
+	sudo chmod 400 ${KEYCHAINS}/.keychain_pass
+	sudo chmod 755 ${KEYCHAINS}
 	echo "
 The OS X Keychain password for ${SERVICE_USER} is ${OSX_KEYCHAIN_PASS}
 You will need to copy this into the Jenkins configuration on ${MASTER_NAME}

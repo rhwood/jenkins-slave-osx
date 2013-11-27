@@ -375,6 +375,9 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 		cleanup 1
 	fi
 	create_user
+	
+	# $@ must be quoted in order to handle arguments that contain spaces
+	# see http://stackoverflow.com/a/8198970/14731
 	process_args "$@"
 	echo "Installing files..."
 	install_files

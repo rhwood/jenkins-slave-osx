@@ -260,7 +260,7 @@ function create_keychain {
 	else
 		# Existing keychain
 		if [ -z "${OSX_KEYCHAIN_PASS}" ]; then
-			read -p "Keychain password: " OSX_KEYCHAIN_PASS
+			read -p "${SERVICE_USER}'s keychain password: " OSX_KEYCHAIN_PASS
 		fi
 	fi
 	if [ -f ${KEYCHAINS}/.keychain_pass ]; then

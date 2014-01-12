@@ -17,7 +17,7 @@ CERTIFICATE=""
 ALIAS=""
 COMMAND=""
 CACERT=""
-AGENT="NO"
+AGENT=""
 DARWIN_VERSION_MAJOR=$( uname -r | sed 's|\([^.]\)\..*|\1|g' )
 
 if [ -f ~/Library/Keychains/.keychain_pass ]; then
@@ -55,7 +55,7 @@ while [ $# -gt 0 ]; do
 			ALIAS=${1#*=}
 			;;
 		--agent)
-			AGENT="YES"
+			AGENT=${1}
 			;;
 		*)
 			echo "Unknown option $1" 1>&2
@@ -78,7 +78,7 @@ if [ "$COMMAND" == "show-password" ]; then
 	exit 0
 fi
 
-if [[ "${COMMAND}" != "lock" && "${AGENT}" != "YES" ]]; then
+if [ "${COMMAND}" != "lock" ] ; then
 	security unlock-keychain -p ${OSX_KEYCHAIN_PASS} ${OSX_KEYCHAIN}
 fi
 case $COMMAND in
@@ -124,7 +124,7 @@ case $COMMAND in
 		;;
 esac
 if [[ "$COMMAND" != "unlock" || ! -f ${OSX_KEYCHAIN_LOCK} ]]; then
-	if [ "${AGENT} != "YES" ]; then
+	if [ "${AGENT} != "--agent" ]; then
 		security lock-keychain ${OSX_KEYCHAIN}
 	fi
 fi

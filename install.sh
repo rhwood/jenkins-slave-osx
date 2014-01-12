@@ -9,9 +9,10 @@ set -u
 SERVICE_USER=${SERVICE_USER:-"jenkins"}
 SERVICE_GROUP=${SERVICE_GROUP:-"${SERVICE_USER}"}
 SERVICE_HOME=${SERVICE_HOME:-"/var/lib/${SERVICE_USER}"}
-SERVICE_CONF="" # set in create_user function
-MASTER_NAME=""	# set default to jenkins later
-MASTER_USER=""	# set default to `whoami` later
+SERVICE_CONF=""   # set in create_user function
+SERVICE_WRKSPC="" # set in create_user function
+MASTER_NAME=""    # set default to jenkins later
+MASTER_USER=""    # set default to `whoami` later
 MASTER=""
 MASTER_HTTP_PORT=""
 SLAVE_NODE=""
@@ -52,25 +53,26 @@ function create_user() {
 		sudo dseditgroup -o edit -a ${SERVICE_USER} -t user ${SERVICE_USER}
 	fi
 	SERVICE_CONF=${SERVICE_HOME}/Library/Preferences/org.jenkins-ci.slave.jnlp.conf
+	SERVICE_WRKSPC=${SERVICE_HOME}/Library/Developer/org.jenkins-ci.slave.jnlp
 }
 
 function install_files() {
 	# create the jenkins home dir
-	if [ ! -d ${SERVICE_HOME} ] ; then
-		sudo mkdir ${SERVICE_HOME}
+	if [ ! -d ${SERVICE_WRKSPC} ] ; then
+		sudo mkdir -p ${SERVICE_WRKSPC}
 	fi
 	# download the LaunchDaemon
-	sudo curl --silent --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
-	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_HOME}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
-	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --silent --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
+	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_WRKSPC}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
+	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
-	sudo install -o root -g wheel -m 644 ${SERVICE_HOME}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	sudo install -o root -g wheel -m 644 ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
-	sudo curl --silent --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_HOME}/slave.jnlp.sh
-	sudo chmod 755 ${SERVICE_HOME}/slave.jnlp.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_WRKSPC}/slave.jnlp.sh
+	sudo chmod 755 ${SERVICE_WRKSPC}/slave.jnlp.sh
 	# download the jenkins JNLP security helper script
-	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_HOME}/security.sh
-	sudo chmod 755 ${SERVICE_HOME}/security.sh
+	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_WRKSPC}/security.sh
+	sudo chmod 755 ${SERVICE_WRKSPC}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${SERVICE_HOME}
 	# create a logging space
@@ -150,10 +152,10 @@ function configure_daemon {
 	done
 	OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
 	create_keychain
-	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"${SLAVE_NODE}\"
-	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
+	sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh set-password --password=${SLAVE_TOKEN} --account=${MASTER_USER} --service=\"${SLAVE_NODE}\"
+	KEYSTORE_PASS=`sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh get-password --account=${SERVICE_USER} --service=java_truststore`
 	KEYSTORE_PASS=${KEYSTORE_PASS:-`env LC_CTYPE=C tr -dc "a-zA-Z0-9-_" < /dev/urandom | head -c 20`}
-	sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
+	sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 	if [ "$PROTOCOL" == "https" ]; then
 		echo "
 If the certificate for ${MASTER_NAME} is not trusted by Java, you will need 
@@ -168,7 +170,7 @@ certificates.
 To install certificates, you will need to:
 1) copy or download the certificates into ${SERVICE_HOME}
 2) use the following command:
-sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-java-certificate \
+sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh add-java-certificate \
 --alias=AN_ALIAS --certificate=/path/to/certificate
 If the certificate is a Root CA cert, add the --ca-cert flag to the above
 command.
@@ -233,14 +235,14 @@ function configure_adc {
 	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 		echo "Importing WWDR intermediate certificate..."
 		sudo -i -u ${SERVICE_USER} curl  --silent --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
-		sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
+		sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
 		sudo -i rm ${SERVICE_HOME}/AppleWWDRCA.cer
 		echo "
 You will need to import your own developer certificates following these steps:
 1) Export the Certificate and Key from Keychain for your developer profiles.
 2) sudo cp /path/to/exported-keys-and-certificates ${SERVICE_HOME}
 3) For each certificate and key (this is a single multiline command):
-   sudo -i -u ${SERVICE_USER} ${SERVICE_HOME}/security.sh \
+   sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh \
    add-apple-certificate --certificate=${SERVICE_HOME}/name-of-exported-cert
 "
 	fi

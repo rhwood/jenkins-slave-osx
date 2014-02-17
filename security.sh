@@ -124,7 +124,7 @@ case $COMMAND in
 		;;
 esac
 if [[ "$COMMAND" != "unlock" || ! -f ${OSX_KEYCHAIN_LOCK} ]]; then
-	if [ "${AGENT} != "--agent" ]; then
+	if [ "${AGENT}" != "--agent" ]; then
 		security lock-keychain ${OSX_KEYCHAIN}
 	fi
 fi

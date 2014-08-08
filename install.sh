@@ -62,16 +62,16 @@ function install_files() {
 		sudo mkdir -p ${SERVICE_WRKSPC}
 	fi
 	# download the LaunchDaemon
-	sudo curl --silent --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
+	sudo curl --silent -L --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_WRKSPC}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	sudo install -o root -g wheel -m 644 ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
-	sudo curl --silent --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_WRKSPC}/slave.jnlp.sh
+	sudo curl --silent -L --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_WRKSPC}/slave.jnlp.sh
 	sudo chmod 755 ${SERVICE_WRKSPC}/slave.jnlp.sh
 	# download the jenkins JNLP security helper script
-	sudo curl --silent --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_WRKSPC}/security.sh
+	sudo curl --silent -L --url ${DOWNLOADS_PATH}/security.sh -o ${SERVICE_WRKSPC}/security.sh
 	sudo chmod 755 ${SERVICE_WRKSPC}/security.sh
 	# jenkins should own jenkin's home directory and all its contents
 	sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${SERVICE_HOME}
@@ -115,7 +115,7 @@ function configure_daemon {
 		read -p "URL for Jenkins master [$MASTER]: " RESPONSE
 		MASTER=${RESPONSE:-$MASTER}
 	fi
-	while ! curl --url ${MASTER}/jnlpJars/slave.jar --insecure --location --silent --fail --output ${INSTALL_TMP}/slave.jar ; do
+	while ! curl -L --url ${MASTER}/jnlpJars/slave.jar --insecure --location --silent --fail --output ${INSTALL_TMP}/slave.jar ; do
 		echo "Unable to connect to Jenkins at ${MASTER}"
 		read -p "URL for Jenkins master: " MASTER
 	done
@@ -146,7 +146,7 @@ function configure_daemon {
 	echo "${MASTER_USER}'s API token is required to authenticate a JNLP slave."
 	echo "The API token is listed at ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER}/configure"
 	read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
-	while ! curl --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --insecure --silent --head --fail --output /dev/null ; do
+	while ! curl -L --url ${MASTER}${MASTER_HTTP_PORT}/user/${MASTER_USER} --user ${MASTER_USER}:${SLAVE_TOKEN} --insecure --silent --head --fail --output /dev/null ; do
 		echo "Unable to authenticate ${MASTER_USER} with this token"
 		read -p "API token for ${MASTER_USER}: " SLAVE_TOKEN
 	done
@@ -234,7 +234,7 @@ function configure_adc {
 	CONFIRM=${CONFIRM:-yes}
 	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 		echo "Importing WWDR intermediate certificate..."
-		sudo -i -u ${SERVICE_USER} curl  --silent --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
+		sudo -i -u ${SERVICE_USER} curl  --silent -L --remote-name --url https://developer.apple.com/certificationauthority/AppleWWDRCA.cer
 		sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh add-apple-certificate --certificate=${SERVICE_HOME}/AppleWWDRCA.cer
 		sudo -i rm ${SERVICE_HOME}/AppleWWDRCA.cer
 		echo "

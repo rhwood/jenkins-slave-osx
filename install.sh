@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Install the Jenkins JNLP slave LaunchDaemon on OS X
+# Install the Jenkins JNLP slave LaunchAgent on OS X
 #
 # See https://github.com/rhwood/jenkins-slave-osx for usage
 
@@ -61,12 +61,12 @@ function install_files() {
 	if [ ! -d ${SERVICE_WRKSPC} ] ; then
 		sudo mkdir -p ${SERVICE_WRKSPC}
 	fi
-	# download the LaunchDaemon
+	# download the LaunchAgent
 	sudo curl --silent -L --url ${DOWNLOADS_PATH}/org.jenkins-ci.slave.jnlp.plist -o ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_HOME}#${SERVICE_WRKSPC}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
 	sudo sed -i '' "s#\${JENKINS_USER}#${SERVICE_USER}#g" ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist
-	sudo rm -f /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
-	sudo install -o root -g wheel -m 644 ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+	sudo rm -f /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist
+	sudo install -o root -g wheel -m 644 ${SERVICE_WRKSPC}/org.jenkins-ci.slave.jnlp.plist /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist
 	# download the jenkins JNLP slave script
 	sudo curl --silent -L --url ${DOWNLOADS_PATH}/slave.jnlp.sh -o ${SERVICE_WRKSPC}/slave.jnlp.sh
 	sudo chmod 755 ${SERVICE_WRKSPC}/slave.jnlp.sh
@@ -158,7 +158,7 @@ function configure_daemon {
 	sudo -i -u ${SERVICE_USER} ${SERVICE_WRKSPC}/security.sh set-password --password=${KEYSTORE_PASS} --account=${SERVICE_USER} --service=java_truststore
 	if [ "$PROTOCOL" == "https" ]; then
 		echo "
-If the certificate for ${MASTER_NAME} is not trusted by Java, you will need 
+If the certificate for ${MASTER_NAME} is not trusted by Java, you will need
 to install public certificates required for Java to trust ${MASTER_NAME}.
 NOTE: The installer is not capable of testing that Java trusts ${MASTER_NAME}.
 
@@ -261,7 +261,7 @@ function create_keychain {
 		fi
 		sudo chmod 777 ${KEYCHAINS}
 		sudo sh -c "echo 'OSX_KEYCHAIN_PASS=${OSX_KEYCHAIN_PASS}' > ${KEYCHAINS}/.keychain_pass"
-		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS} 
+		sudo chown -R ${SERVICE_USER}:${SERVICE_GROUP} ${KEYCHAINS}
 		sudo chmod 400 ${KEYCHAINS}/.keychain_pass
 		sudo chmod 755 ${KEYCHAINS}
 	fi
@@ -307,16 +307,16 @@ function start_daemon {
 The Jenkins JNLP Slave service is installed
 
 This service can be started using the command
-    sudo launchctl load /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+    sudo launchctl load /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist
 and stopped using the command
-    sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+    sudo launchctl unload /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist
 
 This service logs to /var/log/${SERVICE_USER}/org.jenkins-ci.slave.jnlp.log
 "
 	read -p "Start the slave service now (yes/no) [yes]? " CONFIRM
 	CONFIRM=${CONFIRM:-"yes"}
 	if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
-		sudo launchctl load -F /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist
+		sudo launchctl load -F /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist
 		echo
 		read -p "Open Console.app to view logs now (yes/no) [yes]? " CONFIRM
 		CONFIRM=${CONFIRM:-"yes"}
@@ -345,7 +345,7 @@ function rawurlencode() {
 		esac
 		encoded+="${o}"
 	done
-	echo "${encoded}"    # You can either set a return variable (FASTER) 
+	echo "${encoded}"    # You can either set a return variable (FASTER)
 	REPLY="${encoded}"   #+or echo the result (EASIER)... or both... :p
 }
 
@@ -377,7 +377,7 @@ if [[ "${CONFIRM}" =~ ^[Yy] ]] ; then
 		cleanup 1
 	fi
 	create_user
-	
+
 	# $@ must be quoted in order to handle arguments that contain spaces
 	# see http://stackoverflow.com/a/8198970/14731
 	process_args "$@"

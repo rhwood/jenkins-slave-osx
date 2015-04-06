@@ -44,7 +44,7 @@ if launchctl list org.jenkins-ci.slave.jnlp 2>1 >/dev/null ; then
 fi
 
 [ ! -z $HTTP_PORT ] && HTTP_PORT=":${HTTP_PORT}"
-JENKINS_SLAVE_ESC=$( echo -ne "${JENKINS_SLAVE}" | curl -Gso /dev/null -w %{url_effective} --data-urlencode @- "" | cut -c 3- )
+JENKINS_SLAVE_ESC=$( echo -ne "${JENKINS_SLAVE}" | curl -L -Gso /dev/null -w %{url_effective} --data-urlencode @- "" | cut -c 3- )
 JENKINS_JNLP_URL=${JENKINS_MASTER}${HTTP_PORT}/computer/${JENKINS_SLAVE_ESC}/slave-agent.jnlp
 
 echo
@@ -63,7 +63,7 @@ fi
 echo "Getting slave.jar from ${JENKINS_MASTER}"
 RESULT=-1
 while [ true ]; do
-	curl --url ${JENKINS_MASTER}${HTTP_PORT}/jnlpJars/slave.jar --insecure --output ${JENKINS_WRKSPC}/slave.jar
+	curl -L --url ${JENKINS_MASTER}${HTTP_PORT}/jnlpJars/slave.jar --insecure --output ${JENKINS_WRKSPC}/slave.jar
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then
 		break

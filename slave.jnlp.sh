@@ -14,9 +14,6 @@ JAVA_TRUSTSTORE=${JENKINS_HOME}/.keystore
 JAVA_TRUSTSTORE_PASS=''
 AGENT=''
 
-echo "Home: ${HOME}"
-echo "Foo: ${JENKINS_CONF}"
-
 # called when unloaded by launchctl
 function unload() {
 	PID=`cat ${JENKINS_WRKSPC}/.slave.pid`

@@ -16,8 +16,6 @@
 	<string>${JENKINS_USER}</string>
 	<key>WorkingDirectory</key>
 	<string>${JENKINS_HOME}</string>
-	<key>SessionCreate</key>
-	<true/>
 	<key>StandardInPath</key>
 	<string>/dev/null</string>
 	<key>StandardErrorPath</key>

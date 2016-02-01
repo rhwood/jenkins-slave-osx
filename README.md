@@ -1,6 +1,6 @@
 # Jenkins Slave for OS X
 
-Scripts to create and run a [Jenkins](http://jenkins-ci.org) slave via [Java Web Start](https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds#Distributedbuilds-LaunchslaveagentviaJavaWebStart) (JNLP) on OS X as a Launch Daemon.
+Scripts to create and run a [Jenkins](http://jenkins-ci.org) slave via [Java Web Start](https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds#Distributedbuilds-LaunchslaveagentviaJavaWebStart) (JNLP) on OS X as a Launch Agent.
 
 
 
@@ -55,7 +55,7 @@ Building application targets for iOS requires that your iPhone Developer certifi
 ## Adding Server Certificates
 If you decide to secure the Jenkins master, or need to add additional certificates for the slave to trust the Jenkins master, you only need (assuming your service account is "jenkins", and your CA is StartSSL.com) from a command line:
 
-1. `sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`
+1. `sudo launchctl unload /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist`
 2. `sudo -i -u jenkins`
 3. `curl -O http://www.startssl.com/certs/ca.crt`
 4. `./security.sh add-java-certificate --authority --alias=root-ca --certificate=./ca.crt`
@@ -63,4 +63,4 @@ If you decide to secure the Jenkins master, or need to add additional certificat
 6. `./security.sh add-java-certificate --alias=ca-server --certificate=./sub.class1.server.ca.crt`
 7. `rm ./*ca.crt`
 8. `exit`
-9. `sudo launchctl load /Library/LaunchDaemons/org.jenkins-ci.slave.jnlp.plist`
+9. `sudo launchctl load /Library/LaunchAgents/org.jenkins-ci.slave.jnlp.plist`

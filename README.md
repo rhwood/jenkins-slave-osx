@@ -1,3 +1,5 @@
+⚠️ __I no longer use Jenkins, so am not maintaining this project.__ Please open an issue if you are interested in maintaining this project.
+
 # Jenkins Slave for OS X
 
 Scripts to create and run a [Jenkins](http://jenkins-ci.org) slave via [Java Web Start](https://wiki.jenkins-ci.org/display/JENKINS/Distributed+builds#Distributedbuilds-LaunchslaveagentviaJavaWebStart) (JNLP) on OS X as a Launch Daemon.
